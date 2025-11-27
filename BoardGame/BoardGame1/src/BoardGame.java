@@ -13,11 +13,12 @@ class Player {
     private String name;
     private Color color;
     private int currentPosition;
-    private int displayPosition; // Position currently shown during animation
+    private int displayPosition;
     private int targetPosition;
     private double animationProgress;
     boolean movingForward;
     private boolean isUsingLadder;
+    private int score; // NEW: Player score
     private static final int PLAYER_SIZE = 20;
 
     public Player(String name, Color color) {
@@ -29,6 +30,16 @@ class Player {
         this.animationProgress = 1.0;
         this.movingForward = true;
         this.isUsingLadder = false;
+        this.score = 0; // NEW: Initialize score
+    }
+
+    // NEW: Score methods
+    public int getScore() {
+        return score;
+    }
+
+    public void addScore(int points) {
+        this.score += points;
     }
 
     public String getName() {
@@ -73,7 +84,6 @@ class Player {
     public void updateAnimation(double delta) {
         if (displayPosition != targetPosition) {
             animationProgress += delta;
-
             if (animationProgress >= 1.0) {
                 animationProgress = 1.0;
                 displayPosition = targetPosition;
@@ -83,7 +93,6 @@ class Player {
         }
     }
 
-    // New method for box-by-box movement
     public boolean moveToNextBox() {
         if (displayPosition != targetPosition) {
             if (movingForward) {
@@ -91,15 +100,13 @@ class Player {
             } else {
                 displayPosition--;
             }
-
-            // Check if reached target
             if (displayPosition == targetPosition) {
                 currentPosition = targetPosition;
-                return true; // Movement complete
+                return true;
             }
-            return false; // Still moving
+            return false;
         }
-        return true; // Already at target
+        return true;
     }
 
     public boolean isAnimating() {
@@ -111,17 +118,13 @@ class Player {
     }
 
     public void draw(Graphics g, Node currentNode, int playerIndex, int totalPlayers) {
-        // Calculate offset for multiple players on same node
         int offsetX = (playerIndex % 2) * (PLAYER_SIZE + 5);
         int offsetY = (playerIndex / 2) * (PLAYER_SIZE + 5);
-
         int x, y;
 
-        // If using ladder, animate directly from start to end node
         if (isUsingLadder && animationProgress < 1.0) {
             Node startNode = getBoard().getNode(currentPosition);
             Node endNode = getBoard().getNode(targetPosition);
-
             if (startNode != null && endNode != null) {
                 int startX = startNode.getX() + (startNode.getSize() / 2) - PLAYER_SIZE + offsetX;
                 int startY = startNode.getY() + (startNode.getSize() / 2) - PLAYER_SIZE + offsetY;
@@ -131,7 +134,6 @@ class Player {
                 x = (int)(startX + (endX - startX) * animationProgress);
                 y = (int)(startY + (endY - startY) * animationProgress);
 
-                // Add a little bounce effect for ladder animation
                 if (animationProgress < 0.5) {
                     y -= (int)(Math.sin(animationProgress * Math.PI) * 10);
                 }
@@ -140,7 +142,6 @@ class Player {
                 y = currentNode.getY() + (currentNode.getSize() / 2) - PLAYER_SIZE + offsetY;
             }
         } else {
-            // For normal movement, just draw at current display position
             x = currentNode.getX() + (currentNode.getSize() / 2) - PLAYER_SIZE + offsetX;
             y = currentNode.getY() + (currentNode.getSize() / 2) - PLAYER_SIZE + offsetY;
         }
@@ -150,14 +151,12 @@ class Player {
         g.setColor(Color.BLACK);
         g.drawOval(x, y, PLAYER_SIZE, PLAYER_SIZE);
 
-        // Draw a little star when using ladder
         if (isUsingLadder && animationProgress < 1.0) {
             g.setColor(Color.YELLOW);
             g.fillRect(x + PLAYER_SIZE/2 - 2, y - 8, 4, 4);
         }
     }
 
-    // Helper method to get board reference (will be set by GameManager)
     private Board getBoard() {
         return GameManager.getCurrentBoard();
     }
@@ -167,7 +166,7 @@ class Player {
 class Dice {
     private Random random;
     private int lastRoll;
-    private boolean isGreen; // true = green (forward), false = red (backward)
+    private boolean isGreen;
 
     public Dice() {
         random = new Random();
@@ -176,12 +175,9 @@ class Dice {
     }
 
     public int roll() {
-        lastRoll = random.nextInt(6) + 1; // 1 to 6
-
-        // 70% chance for green (forward), 30% chance for red (backward)
+        lastRoll = random.nextInt(6) + 1;
         double probability = random.nextDouble();
         isGreen = probability < 0.7;
-
         return lastRoll;
     }
 
@@ -206,12 +202,22 @@ class Dice {
 class Node {
     private int number;
     private int x, y;
+    private int points; // NEW: Points for this box
     private static final int SIZE = 60;
 
     public Node(int number, int x, int y) {
         this.number = number;
         this.x = x;
         this.y = y;
+        this.points = 0; // Default no points
+    }
+
+    public void setPoints(int points) {
+        this.points = points;
+    }
+
+    public int getPoints() {
+        return points;
     }
 
     public int getNumber() {
@@ -234,19 +240,34 @@ class Node {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Highlight if multiple of 5
-        if (number % 5 == 0 && number > 0) {
-            g2d.setColor(new Color(255, 215, 0, 100)); // Gold with transparency
+        // Check if prime number
+        boolean isPrime = isPrimeNumber(number);
+
+        // Highlight prime numbers with light blue
+        if (isPrime) {
+            g2d.setColor(new Color(173, 216, 230, 100)); // Light blue with transparency
             g2d.fillRect(x, y, SIZE, SIZE);
         }
 
-        // Draw the box
+        // Highlight if multiple of 5
+        if (number % 5 == 0 && number > 0) {
+            g2d.setColor(new Color(255, 215, 0, 100));
+            g2d.fillRect(x, y, SIZE, SIZE);
+        }
+
         g2d.setColor(Color.WHITE);
         g2d.fillRect(x, y, SIZE, SIZE);
 
+        // Highlight border for primes
+        if (isPrime) {
+            g2d.setColor(new Color(0, 100, 200)); // Blue for primes
+            g2d.setStroke(new BasicStroke(3));
+            g2d.drawRect(x, y, SIZE, SIZE);
+        }
+
         // Highlight border for multiples of 5
         if (number % 5 == 0 && number > 0) {
-            g2d.setColor(new Color(255, 215, 0)); // Gold
+            g2d.setColor(new Color(255, 215, 0));
             g2d.setStroke(new BasicStroke(3));
             g2d.drawRect(x, y, SIZE, SIZE);
         }
@@ -261,24 +282,54 @@ class Node {
         String numStr = String.valueOf(number);
         int textWidth = fm.stringWidth(numStr);
 
-        // Color the number gold if multiple of 5
         if (number % 5 == 0 && number > 0) {
-            g2d.setColor(new Color(184, 134, 11)); // Dark gold
+            g2d.setColor(new Color(184, 134, 11));
+        } else if (isPrime) {
+            g2d.setColor(new Color(0, 0, 139)); // Dark blue for primes
         } else {
             g2d.setColor(Color.BLACK);
         }
         g2d.drawString(numStr, x + SIZE - textWidth - 5, y + 15);
 
+        // Draw "P" for prime numbers
+        if (isPrime) {
+            g2d.setFont(new Font("Arial", Font.BOLD, 16));
+            g2d.setColor(new Color(0, 100, 200));
+            String primeText = "P";
+            FontMetrics fm2 = g2d.getFontMetrics();
+            int primeWidth = fm2.stringWidth(primeText);
+            g2d.drawString(primeText, x + 5, y + 15);
+        }
+
         // Draw "2X" text in the middle for multiples of 5
         if (number % 5 == 0 && number > 0) {
             g2d.setFont(new Font("Arial", Font.BOLD, 20));
-            g2d.setColor(new Color(255, 215, 0)); // Gold
+            g2d.setColor(new Color(255, 215, 0));
             String bonus = "2X";
             FontMetrics fm2 = g2d.getFontMetrics();
             int bonusWidth = fm2.stringWidth(bonus);
             int bonusHeight = fm2.getAscent();
             g2d.drawString(bonus, x + (SIZE - bonusWidth) / 2, y + (SIZE + bonusHeight) / 2 - 5);
         }
+
+        // NEW: Draw points at bottom-left corner
+        if (points > 0) {
+            g2d.setFont(new Font("Arial", Font.BOLD, 14));
+            g2d.setColor(new Color(255, 140, 0)); // Orange color
+            String pointsText = "+" + points;
+            g2d.drawString(pointsText, x + 5, y + SIZE - 5);
+        }
+    }
+
+    // Helper method to check if a number is prime
+    private boolean isPrimeNumber(int n) {
+        if (n <= 1) return false;
+        if (n <= 3) return true;
+        if (n % 2 == 0 || n % 3 == 0) return false;
+        for (int i = 5; i * i <= n; i += 6) {
+            if (n % i == 0 || n % (i + 2) == 0) return false;
+        }
+        return true;
     }
 }
 
@@ -288,7 +339,7 @@ class Board {
     private static final int ROWS = 8;
     private static final int COLS = 8;
     private static final int TOTAL_NODES = ROWS * COLS;
-    private Map<Integer, Integer> ladders; // bottom -> top
+    private Map<Integer, Integer> ladders;
     private Random random;
 
     public Board() {
@@ -297,6 +348,7 @@ class Board {
         random = new Random();
         initializeBoard();
         generateRandomLadders();
+        generateRandomPoints(); // NEW: Generate random points
     }
 
     private void initializeBoard() {
@@ -304,10 +356,8 @@ class Board {
         int nodeSize = 60;
         int padding = 20;
 
-        // Start from bottom-left, zigzag pattern
         for (int row = ROWS - 1; row >= 0; row--) {
             if ((ROWS - 1 - row) % 2 == 0) {
-                // Even rows (from bottom): go left to right
                 for (int col = 0; col < COLS; col++) {
                     int x = padding + col * nodeSize;
                     int y = padding + row * nodeSize;
@@ -315,7 +365,6 @@ class Board {
                     number++;
                 }
             } else {
-                // Odd rows (from bottom): go right to left
                 for (int col = COLS - 1; col >= 0; col--) {
                     int x = padding + col * nodeSize;
                     int y = padding + row * nodeSize;
@@ -330,7 +379,6 @@ class Board {
         int numberOfLadders = 5;
         List<Integer> availablePositions = new ArrayList<>();
 
-        // Add all positions except first and last
         for (int i = 2; i <= TOTAL_NODES - 1; i++) {
             availablePositions.add(i);
         }
@@ -338,15 +386,13 @@ class Board {
         for (int i = 0; i < numberOfLadders; i++) {
             if (availablePositions.size() < 2) break;
 
-            // Get random bottom position
             int bottomIndex = random.nextInt(availablePositions.size());
             int bottom = availablePositions.get(bottomIndex);
             availablePositions.remove(bottomIndex);
 
-            // Find available top positions (must be higher than bottom)
             List<Integer> possibleTops = new ArrayList<>();
             for (int pos : availablePositions) {
-                if (pos > bottom && Math.abs(pos - bottom) >= 5) { // Minimum ladder length of 5
+                if (pos > bottom && Math.abs(pos - bottom) >= 5) {
                     possibleTops.add(pos);
                 }
             }
@@ -355,9 +401,38 @@ class Board {
                 int topIndex = random.nextInt(possibleTops.size());
                 int top = possibleTops.get(topIndex);
                 availablePositions.remove(Integer.valueOf(top));
-
                 ladders.put(bottom, top);
-                System.out.println("Ladder: " + bottom + " -> " + top); // For debugging
+                System.out.println("Ladder: " + bottom + " -> " + top);
+            }
+        }
+    }
+
+    // NEW: Generate random points for boxes
+    private void generateRandomPoints() {
+        // Set 100 points for the last box
+        Node lastNode = getNode(TOTAL_NODES);
+        if (lastNode != null) {
+            lastNode.setPoints(100);
+        }
+
+        // Generate random points for 10-15 random boxes (excluding first and last)
+        int numberOfPointBoxes = 10 + random.nextInt(6); // 10 to 15 boxes
+        List<Integer> availablePositions = new ArrayList<>();
+
+        for (int i = 2; i < TOTAL_NODES; i++) {
+            availablePositions.add(i);
+        }
+
+        for (int i = 0; i < numberOfPointBoxes && !availablePositions.isEmpty(); i++) {
+            int index = random.nextInt(availablePositions.size());
+            int position = availablePositions.get(index);
+            availablePositions.remove(index);
+
+            Node node = getNode(position);
+            if (node != null) {
+                int points = 1 + random.nextInt(10); // 1 to 10 points
+                node.setPoints(points);
+                System.out.println("Points: Box " + position + " = " + points);
             }
         }
     }
@@ -385,6 +460,17 @@ class Board {
         return new HashMap<>(ladders);
     }
 
+    // NEW: Check if a number is prime
+    public boolean isPrime(int n) {
+        if (n <= 1) return false;
+        if (n <= 3) return true;
+        if (n % 2 == 0 || n % 3 == 0) return false;
+        for (int i = 5; i * i <= n; i += 6) {
+            if (n % i == 0 || n % (i + 2) == 0) return false;
+        }
+        return true;
+    }
+
     public void draw(Graphics g) {
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
@@ -401,13 +487,11 @@ class Board {
         for (Map.Entry<Integer, Integer> ladder : ladders.entrySet()) {
             int bottom = ladder.getKey();
             int top = ladder.getValue();
-
             Node bottomNode = getNode(bottom);
             Node topNode = getNode(top);
 
             if (bottomNode != null && topNode != null) {
-                // Draw ladder with green color
-                g2d.setColor(new Color(0, 100, 0)); // Dark green
+                g2d.setColor(new Color(0, 100, 0));
                 g2d.setStroke(new BasicStroke(4));
 
                 int startX = bottomNode.getX() + bottomNode.getSize() / 2;
@@ -415,11 +499,9 @@ class Board {
                 int endX = topNode.getX() + topNode.getSize() / 2;
                 int endY = topNode.getY() + topNode.getSize() / 2;
 
-                // Draw ladder sides
                 g2d.drawLine(startX - 8, startY, endX - 8, endY);
                 g2d.drawLine(startX + 8, startY, endX + 8, endY);
 
-                // Draw ladder rungs
                 g2d.setStroke(new BasicStroke(2));
                 int steps = 5;
                 for (int i = 1; i < steps; i++) {
@@ -431,12 +513,10 @@ class Board {
                     g2d.drawLine(x1, y1, x2, y2);
                 }
 
-                // Draw ladder indicator on nodes
                 g2d.setColor(new Color(0, 150, 0, 100));
                 g2d.fillRect(bottomNode.getX(), bottomNode.getY(), bottomNode.getSize(), bottomNode.getSize());
                 g2d.fillRect(topNode.getX(), topNode.getY(), topNode.getSize(), topNode.getSize());
 
-                // Draw "L" on ladder nodes
                 g2d.setColor(Color.GREEN);
                 g2d.setFont(new Font("Arial", Font.BOLD, 16));
                 String ladderText = "L";
@@ -467,17 +547,16 @@ class GameManager {
     private Timer movementTimer;
     private boolean doubleTurn;
     private JLabel statusLabel;
-    private static Board currentBoard; // Static reference for Player class
+    private static Board currentBoard;
 
     public GameManager(Board board, int numPlayers) {
         this.board = board;
-        currentBoard = board; // Set static reference
+        currentBoard = board;
         this.dice = new Dice();
         this.currentPlayerIndex = 0;
         this.gameOver = false;
         this.doubleTurn = false;
 
-        // Initialize players with different colors
         players = new Player[numPlayers];
         Color[] colors = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW};
         for (int i = 0; i < numPlayers; i++) {
@@ -497,81 +576,105 @@ class GameManager {
         if (gameOver) return;
 
         Player currentPlayer = players[currentPlayerIndex];
+        int startPosition = currentPlayer.getCurrentPosition(); // Store starting position
         int roll = dice.roll();
-
+        int stepsRemaining = roll;
         int newPosition;
+
         if (dice.isGreen()) {
-            // Green: move forward
-            newPosition = currentPlayer.getCurrentPosition() + roll;
+            newPosition = startPosition + roll;
         } else {
-            // Red: move backward
-            newPosition = currentPlayer.getCurrentPosition() - roll;
+            newPosition = startPosition - roll;
         }
 
-        // Ensure position stays within bounds
         if (newPosition < 1) {
-            newPosition = 1; // Can't go below position 1
+            newPosition = 1;
         }
 
-        // Check if player reaches or exceeds the final position
         if (newPosition >= board.getTotalNodes()) {
             newPosition = board.getTotalNodes();
             gameOver = true;
         }
 
         final int finalPosition = newPosition;
+        final int initialSteps = stepsRemaining;
 
-        // Call dice complete callback first (to finish dice animation)
         if (onComplete != null) {
             onComplete.run();
         }
 
-        // Wait a bit before starting piece movement
         Timer delayTimer = new Timer(600, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ((Timer)e.getSource()).stop();
-
-                // Now start piece movement with box-by-box animation
                 currentPlayer.setTargetPosition(finalPosition);
 
-                // Start box-by-box movement timer
-                movementTimer = new Timer(300, new ActionListener() { // 300ms delay between boxes
+                // NEW: Track if we can use ladder on this turn
+                final boolean canUseLadderThisTurn = board.isPrime(startPosition);
+                final int[] stepsUsed = {0};
+
+                movementTimer = new Timer(300, new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         boolean movementComplete = currentPlayer.moveToNextBox();
+                        stepsUsed[0]++;
 
                         if (movementComplete) {
                             movementTimer.stop();
-
-                            // Check for ladder after normal movement
                             int landedPosition = currentPlayer.getCurrentPosition();
-                            if (board.isLadderBottom(landedPosition)) {
+
+                            // NEW: Check ladder conditions
+                            if (board.isLadderBottom(landedPosition) && canUseLadderThisTurn && stepsUsed[0] < initialSteps) {
                                 int ladderTop = board.checkLadder(landedPosition);
 
-                                // Show ladder message
                                 if (statusLabel != null) {
-                                    statusLabel.setText("<html><center>LADDER!<br>" +
-                                            currentPlayer.getName() + " climbs from " +
-                                            landedPosition + " to " + ladderTop + "!</center></html>");
+                                    statusLabel.setText("<html><center>LADDER ACTIVATED!<br>" +
+                                            currentPlayer.getName() + " started from prime " + startPosition + "<br>" +
+                                            "Climbing from " + landedPosition + " to " + ladderTop +
+                                            " (Step " + (stepsUsed[0] + 1) + " of " + initialSteps + ")</center></html>");
                                 }
 
-                                // Use ladder animation (direct to destination)
                                 currentPlayer.setLadderTarget(ladderTop);
 
-                                // Start ladder animation
                                 Timer ladderTimer = new Timer(20, new ActionListener() {
                                     @Override
                                     public void actionPerformed(ActionEvent e) {
-                                        currentPlayer.updateAnimation(0.05); // Slower for ladder animation
+                                        currentPlayer.updateAnimation(0.05);
                                         if (!currentPlayer.isAnimating()) {
                                             ((Timer)e.getSource()).stop();
-                                            finishTurn(onComplete);
+
+                                            // Continue movement after ladder if steps remain
+                                            int remainingSteps = initialSteps - stepsUsed[0] - 1;
+                                            if (remainingSteps > 0) {
+                                                int nextTarget;
+                                                if (dice.isGreen()) {
+                                                    nextTarget = currentPlayer.getCurrentPosition() + remainingSteps;
+                                                } else {
+                                                    nextTarget = currentPlayer.getCurrentPosition() - remainingSteps;
+                                                }
+
+                                                if (nextTarget < 1) nextTarget = 1;
+                                                if (nextTarget >= board.getTotalNodes()) {
+                                                    nextTarget = board.getTotalNodes();
+                                                    gameOver = true;
+                                                }
+
+                                                currentPlayer.setTargetPosition(nextTarget);
+                                                movementTimer.start();
+                                            } else {
+                                                finishTurn(onComplete);
+                                            }
                                         }
                                     }
                                 });
                                 ladderTimer.start();
                             } else {
+                                if (board.isLadderBottom(landedPosition) && !canUseLadderThisTurn) {
+                                    if (statusLabel != null) {
+                                        statusLabel.setText("<html><center>Ladder at " + landedPosition + "<br>" +
+                                                "Cannot use: started from " + startPosition + " (not prime)</center></html>");
+                                    }
+                                }
                                 finishTurn(onComplete);
                             }
                         }
@@ -587,10 +690,38 @@ class GameManager {
     private void finishTurn(Runnable onComplete) {
         Player currentPlayer = players[currentPlayerIndex];
 
-        // Check if landed on multiple of 5
+        // NEW: Collect points from current position
+        Node currentNode = board.getNode(currentPlayer.getCurrentPosition());
+        if (currentNode != null && currentNode.getPoints() > 0) {
+            int points = currentNode.getPoints();
+            currentPlayer.addScore(points);
+            currentNode.setPoints(0); // Remove points after collection
+
+            if (statusLabel != null) {
+                String colorHex = String.format("#%02x%02x%02x",
+                        currentPlayer.getColor().getRed(),
+                        currentPlayer.getColor().getGreen(),
+                        currentPlayer.getColor().getBlue());
+                statusLabel.setText("<html><center><font color='" + colorHex + "'>" +
+                        currentPlayer.getName() + "</font><br>collected <b>+" + points + " points!</b><br>" +
+                        "Total: " + currentPlayer.getScore() + "</center></html>");
+            }
+        }
+
         doubleTurn = (currentPlayer.getCurrentPosition() % 5 == 0 && currentPlayer.getCurrentPosition() > 0);
 
-        // Move to next player only if not double turn
+        // NEW: Show popup for double turn
+        if (doubleTurn) {
+            SwingUtilities.invokeLater(() -> {
+                JLabel message = new JLabel("<html><center><b style='font-size: 24px; color: rgb(255, 215, 0);'>CONGRATULATIONS!<br> you get a <br>DOUBLE TURN!</b></center></html>");
+                message.setHorizontalAlignment(SwingConstants.CENTER);
+                UIManager.put("OptionPane.background", new Color(40, 40, 40));
+                UIManager.put("Panel.background", new Color(40, 40, 40));
+                UIManager.put("OptionPane.messageForeground", new Color(255, 215, 0));
+                JOptionPane.showMessageDialog(null, message, "Double Turn!", JOptionPane.INFORMATION_MESSAGE);
+            });
+        }
+
         if (!gameOver && !doubleTurn) {
             currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
         }
@@ -657,7 +788,6 @@ class BoardPanel extends JPanel {
         setPreferredSize(new Dimension(520, 520));
         setBackground(new Color(245, 222, 179));
 
-        // Animation repaint timer
         repaintTimer = new Timer(16, e -> repaint());
         repaintTimer.start();
     }
@@ -667,12 +797,10 @@ class BoardPanel extends JPanel {
         super.paintComponent(g);
         board.draw(g);
 
-        // Draw all players
         Player[] players = gameManager.getPlayers();
         for (int i = 0; i < players.length; i++) {
             int displayPos = players[i].getDisplayPosition();
             Node currentNode = board.getNode(displayPos);
-
             if (currentNode != null) {
                 players[i].draw(g, currentNode, i, players.length);
             }
@@ -688,11 +816,10 @@ class BoardPanel extends JPanel {
 public class BoardGame {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Board Game - 8x8 with Ladders");
+            JFrame frame = new JFrame("Board Game - Prime Ladder Edition");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new BorderLayout());
 
-            // Ask for number of players
             String input = JOptionPane.showInputDialog(frame,
                     "Enter number of players (2-4):", "2");
             int numPlayers = 2;
@@ -704,25 +831,28 @@ public class BoardGame {
                 numPlayers = 2;
             }
 
-            // Initialize game components
             Board board = new Board();
             GameManager gameManager = new GameManager(board, numPlayers);
             BoardPanel boardPanel = new BoardPanel(gameManager);
 
-            // Create right side panel with controls
             JPanel rightPanel = new JPanel();
             rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-            rightPanel.setPreferredSize(new Dimension(250, 520));
+            rightPanel.setPreferredSize(new Dimension(280, 520));
             rightPanel.setBackground(new Color(60, 60, 60));
             rightPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-            // Title label
-            JLabel titleLabel = new JLabel("Board Game");
-            titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+            JLabel titleLabel = new JLabel("Prime Ladder Game");
+            titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
             titleLabel.setForeground(Color.WHITE);
             titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            // Dice display panel
+            // NEW: Add rules label
+            JLabel rulesLabel = new JLabel("<html><center><b>Ladder Rule:</b><br>Start from PRIME box<br>to use ladders!</center></html>");
+            rulesLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+            rulesLabel.setForeground(new Color(173, 216, 230));
+            rulesLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            rulesLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
             class DicePanel extends JPanel {
                 private int diceValue = 0;
                 private Color diceColor = Color.WHITE;
@@ -744,7 +874,6 @@ public class BoardGame {
                             diceValue = (int)(Math.random() * 6) + 1;
                             rotationAngle += 0.3;
                             count++;
-
                             if (count > 20) {
                                 rotationTimer.stop();
                                 diceValue = finalValue;
@@ -769,13 +898,11 @@ public class BoardGame {
                     g2d.translate(centerX, centerY);
                     g2d.rotate(rotationAngle);
 
-                    // Draw dice
                     g2d.setColor(diceColor);
                     g2d.fillRoundRect(-30, -30, 60, 60, 10, 10);
                     g2d.setColor(Color.BLACK);
                     g2d.drawRoundRect(-30, -30, 60, 60, 10, 10);
 
-                    // Draw dice value
                     g2d.setFont(new Font("Arial", Font.BOLD, 32));
                     String val = diceValue > 0 ? String.valueOf(diceValue) : "?";
                     FontMetrics fm = g2d.getFontMetrics();
@@ -788,17 +915,33 @@ public class BoardGame {
             DicePanel dicePanel = new DicePanel();
             dicePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            // Status label
-            JLabel statusLabel = new JLabel("<html><center>Current Player:<br><b>" +
-                    gameManager.getCurrentPlayer().getName() + "</b></center></html>");
+            JLabel statusLabel = new JLabel();
             statusLabel.setFont(new Font("Arial", Font.PLAIN, 16));
             statusLabel.setForeground(Color.WHITE);
             statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-            // Set status label in game manager
+            // Helper method to update status with colored player name
+            Runnable updateStatusLabel = () -> {
+                Player currentPlayer = gameManager.getCurrentPlayer();
+                String colorHex = String.format("#%02x%02x%02x",
+                        currentPlayer.getColor().getRed(),
+                        currentPlayer.getColor().getGreen(),
+                        currentPlayer.getColor().getBlue());
+                String statusText = "<html><center>Current Player:<br><b><font color='" + colorHex + "'>" +
+                        currentPlayer.getName() + "</font></b>";
+                if (gameManager.isDoubleTurn()) {
+                    statusText += "<br><font color='rgb(255, 215, 0)'>DOUBLE TURN!</font>";
+                }
+                statusText += "</center></html>";
+                statusLabel.setText(statusText);
+            };
+
+            // Initial status
+            updateStatusLabel.run();
+
             gameManager.setStatusLabel(statusLabel);
 
-            // Roll button
             JButton rollButton = new JButton("Roll Dice");
             rollButton.setFont(new Font("Arial", Font.BOLD, 16));
             rollButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -807,75 +950,83 @@ public class BoardGame {
             rollButton.setForeground(Color.WHITE);
             rollButton.setFocusPainted(false);
 
-            // Ladders info panel
-            JTextArea laddersInfo = new JTextArea();
-            laddersInfo.setEditable(false);
-            laddersInfo.setBackground(new Color(80, 80, 80));
-            laddersInfo.setForeground(Color.WHITE);
-            laddersInfo.setFont(new Font("Arial", Font.PLAIN, 12));
-            laddersInfo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            laddersInfo.setLineWrap(true);
-            laddersInfo.setWrapStyleWord(true);
+            JLabel laddersInfoLabel = new JLabel();
+            laddersInfoLabel.setForeground(Color.WHITE);
+            laddersInfoLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+            laddersInfoLabel.setVerticalAlignment(SwingConstants.TOP);
+            laddersInfoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            // Build ladders info text
-            StringBuilder laddersText = new StringBuilder("Ladders in this game:\n\n");
-            Map<Integer, Integer> ladders = board.getLadders();
-            for (Map.Entry<Integer, Integer> ladder : ladders.entrySet()) {
-                laddersText.append("Ladder: ").append(ladder.getKey())
-                        .append(" → ").append(ladder.getValue()).append("\n");
-            }
-            laddersInfo.setText(laddersText.toString());
+            // NEW: Build scoreboard instead of ladder info
+            Runnable updateScoreboard = () -> {
+                StringBuilder scoreText = new StringBuilder("<html><div style='text-align: center;'>");
+                scoreText.append("<b style='font-size: 14px;'>SCOREBOARD</b><br><br>");
 
-            JScrollPane laddersScroll = new JScrollPane(laddersInfo);
-            laddersScroll.setPreferredSize(new Dimension(200, 150));
-            laddersScroll.setMaximumSize(new Dimension(200, 150));
-            laddersScroll.setAlignmentX(Component.CENTER_ALIGNMENT);
+                Player[] players = gameManager.getPlayers();
+                for (int i = 0; i < players.length; i++) {
+                    String colorHex = String.format("#%02x%02x%02x",
+                            players[i].getColor().getRed(),
+                            players[i].getColor().getGreen(),
+                            players[i].getColor().getBlue());
+                    scoreText.append("<font color='").append(colorHex).append("'><b>")
+                            .append(players[i].getName()).append("</b></font>: ")
+                            .append(players[i].getScore()).append(" pts<br>");
+                }
+
+                scoreText.append("</div></html>");
+                laddersInfoLabel.setText(scoreText.toString());
+            };
+
+            // Initial scoreboard
+            updateScoreboard.run();
+
+            JPanel laddersPanel = new JPanel();
+            laddersPanel.setBackground(new Color(80, 80, 80));
+            laddersPanel.setPreferredSize(new Dimension(240, 150));
+            laddersPanel.setMaximumSize(new Dimension(240, 150));
+            laddersPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            laddersPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 1));
+            laddersPanel.add(laddersInfoLabel);
 
             rollButton.addActionListener(e -> {
                 if (!gameManager.isGameOver() && !gameManager.isAnyPlayerAnimating()) {
                     rollButton.setEnabled(false);
-
                     gameManager.playTurn(() -> {
                         Dice dice = gameManager.getDice();
-                        String direction = dice.isGreen() ? "Forward →" : "Backward ←";
-                        Color textColor = dice.isGreen() ? new Color(34, 139, 34) : new Color(220, 20, 60);
-
                         if (gameManager.isGameOver()) {
                             Player winner = gameManager.getWinner();
-                            statusLabel.setText("<html><center><b>GAME OVER!</b><br>Winner: " +
-                                    winner.getName() + "</center></html>");
+                            String colorHex = String.format("#%02x%02x%02x",
+                                    winner.getColor().getRed(),
+                                    winner.getColor().getGreen(),
+                                    winner.getColor().getBlue());
+                            statusLabel.setText("<html><center><b>GAME OVER!</b><br>Winner: <font color='" +
+                                    colorHex + "'>" + winner.getName() + "</font><br>Final Score: " +
+                                    winner.getScore() + " pts</center></html>");
                         } else {
-                            String statusText = "<html><center>Current Player:<br><b>" +
-                                    gameManager.getCurrentPlayer().getName() + "</b>";
-                            if (gameManager.isDoubleTurn()) {
-                                statusText += "<br><font color='gold'>DOUBLE TURN!</font>";
-                            }
-                            statusText += "</center></html>";
-                            statusLabel.setText(statusText);
+                            updateStatusLabel.run();
                             rollButton.setEnabled(true);
                         }
+                        updateScoreboard.run(); // Update scoreboard after each turn
                     });
 
-                    // Animate dice
                     Dice dice = gameManager.getDice();
                     dicePanel.animateDiceRoll(dice.getLastRoll(), dice.getColor());
                 }
             });
 
-            // Add components to right panel
             rightPanel.add(titleLabel);
-            rightPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+            rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+            rightPanel.add(rulesLabel);
+            rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
             rightPanel.add(dicePanel);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
             rightPanel.add(statusLabel);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
             rightPanel.add(rollButton);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-            rightPanel.add(laddersScroll);
+            rightPanel.add(laddersPanel);
 
             frame.add(boardPanel, BorderLayout.CENTER);
             frame.add(rightPanel, BorderLayout.EAST);
-
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
