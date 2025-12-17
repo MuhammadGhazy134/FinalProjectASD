@@ -8,6 +8,16 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Random;
+import javax.swing.Timer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.PriorityQueue;
 
 // Player class representing each player in the game
 class Player {
@@ -19,7 +29,7 @@ class Player {
     private double animationProgress;
     boolean movingForward;
     private boolean isUsingLadder;
-    private int score; // NEW: Player score
+    private int score;
     private static final int PLAYER_SIZE = 20;
 
     public Player(String name, Color color) {
@@ -31,10 +41,9 @@ class Player {
         this.animationProgress = 1.0;
         this.movingForward = true;
         this.isUsingLadder = false;
-        this.score = 0; // NEW: Initialize score
+        this.score = 0;
     }
 
-    // NEW: Score methods
     public int getScore() {
         return score;
     }
@@ -178,7 +187,7 @@ class Dice {
     public int roll() {
         lastRoll = random.nextInt(6) + 1;
         double probability = random.nextDouble();
-        isGreen = probability < 0.7;
+        isGreen = probability < 0.9;
         return lastRoll;
     }
 
@@ -203,14 +212,14 @@ class Dice {
 class Node {
     private int number;
     private int x, y;
-    private int points; // NEW: Points for this box
+    private int points;
     private static final int SIZE = 60;
 
     public Node(int number, int x, int y) {
         this.number = number;
         this.x = x;
         this.y = y;
-        this.points = 0; // Default no points
+        this.points = 0;
     }
 
     public void setPoints(int points) {
@@ -241,16 +250,13 @@ class Node {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Check if prime number
         boolean isPrime = isPrimeNumber(number);
 
-        // Highlight prime numbers with light blue
         if (isPrime) {
-            g2d.setColor(new Color(173, 216, 230, 100)); // Light blue with transparency
+            g2d.setColor(new Color(173, 216, 230, 100));
             g2d.fillRect(x, y, SIZE, SIZE);
         }
 
-        // Highlight if multiple of 5
         if (number % 5 == 0 && number > 0) {
             g2d.setColor(new Color(255, 215, 0, 100));
             g2d.fillRect(x, y, SIZE, SIZE);
@@ -259,14 +265,12 @@ class Node {
         g2d.setColor(Color.WHITE);
         g2d.fillRect(x, y, SIZE, SIZE);
 
-        // Highlight border for primes
         if (isPrime) {
-            g2d.setColor(new Color(0, 100, 200)); // Blue for primes
+            g2d.setColor(new Color(0, 100, 200));
             g2d.setStroke(new BasicStroke(3));
             g2d.drawRect(x, y, SIZE, SIZE);
         }
 
-        // Highlight border for multiples of 5
         if (number % 5 == 0 && number > 0) {
             g2d.setColor(new Color(255, 215, 0));
             g2d.setStroke(new BasicStroke(3));
@@ -277,7 +281,6 @@ class Node {
         g2d.setStroke(new BasicStroke(1));
         g2d.drawRect(x, y, SIZE, SIZE);
 
-        // Draw the number at top-right corner
         g2d.setFont(new Font("Arial", Font.BOLD, 12));
         FontMetrics fm = g2d.getFontMetrics();
         String numStr = String.valueOf(number);
@@ -286,13 +289,12 @@ class Node {
         if (number % 5 == 0 && number > 0) {
             g2d.setColor(new Color(184, 134, 11));
         } else if (isPrime) {
-            g2d.setColor(new Color(0, 0, 139)); // Dark blue for primes
+            g2d.setColor(new Color(0, 0, 139));
         } else {
             g2d.setColor(Color.BLACK);
         }
         g2d.drawString(numStr, x + SIZE - textWidth - 5, y + 15);
 
-        // Draw "P" for prime numbers
         if (isPrime) {
             g2d.setFont(new Font("Arial", Font.BOLD, 16));
             g2d.setColor(new Color(0, 100, 200));
@@ -302,7 +304,6 @@ class Node {
             g2d.drawString(primeText, x + 5, y + 15);
         }
 
-        // Draw "2X" text in the middle for multiples of 5
         if (number % 5 == 0 && number > 0) {
             g2d.setFont(new Font("Arial", Font.BOLD, 20));
             g2d.setColor(new Color(255, 215, 0));
@@ -313,16 +314,14 @@ class Node {
             g2d.drawString(bonus, x + (SIZE - bonusWidth) / 2, y + (SIZE + bonusHeight) / 2 - 5);
         }
 
-        // NEW: Draw points at bottom-left corner
         if (points > 0) {
             g2d.setFont(new Font("Arial", Font.BOLD, 14));
-            g2d.setColor(new Color(255, 140, 0)); // Orange color
+            g2d.setColor(new Color(255, 140, 0));
             String pointsText = "+" + points;
             g2d.drawString(pointsText, x + 5, y + SIZE - 5);
         }
     }
 
-    // Helper method to check if a number is prime
     private boolean isPrimeNumber(int n) {
         if (n <= 1) return false;
         if (n <= 3) return true;
@@ -334,7 +333,7 @@ class Node {
     }
 }
 
-// NEW: Dijkstra Algorithm Implementation
+// Dijkstra Algorithm Implementation
 class DijkstraAlgorithm {
     private Board board;
     private boolean movingForward;
@@ -343,10 +342,9 @@ class DijkstraAlgorithm {
         this.board = board;
     }
 
-    // Node for Dijkstra's algorithm
     private static class DijkstraNode implements Comparable<DijkstraNode> {
         int position;
-        int stepsUsed;  // Changed from distance to stepsUsed for clarity
+        int stepsUsed;
         List<Integer> path;
 
         public DijkstraNode(int position, int stepsUsed, List<Integer> path) {
@@ -357,21 +355,19 @@ class DijkstraAlgorithm {
 
         @Override
         public int compareTo(DijkstraNode other) {
-            // Prioritize fewer steps used
             if (this.stepsUsed != other.stepsUsed) {
                 return Integer.compare(this.stepsUsed, other.stepsUsed);
             }
-            // If same steps, prioritize higher position
             return Integer.compare(other.position, this.position);
         }
     }
 
-    public List<Integer> findShortestPathWithLadders(int start, int diceRoll) {
+    public List<Integer> findShortestPathWithLadders(int start, int diceRoll, boolean forward) {
+        this.movingForward = forward;
         PriorityQueue<DijkstraNode> pq = new PriorityQueue<>();
         Map<Integer, Integer> bestSteps = new HashMap<>();
         Map<Integer, List<Integer>> bestPaths = new HashMap<>();
 
-        // Initialize with starting position
         List<Integer> initialPath = new ArrayList<>();
         initialPath.add(start);
         pq.offer(new DijkstraNode(start, 0, initialPath));
@@ -385,13 +381,11 @@ class DijkstraAlgorithm {
         while (!pq.isEmpty()) {
             DijkstraNode current = pq.poll();
 
-            // Skip if we've already found a better path to this position
             if (bestSteps.containsKey(current.position) &&
                     bestSteps.get(current.position) < current.stepsUsed) {
                 continue;
             }
 
-            // If we've used all our dice roll steps, this is a potential final position
             if (current.stepsUsed == diceRoll) {
                 if (current.position > bestFinalPosition ||
                         (current.position == bestFinalPosition && current.stepsUsed < bestFinalSteps)) {
@@ -399,19 +393,15 @@ class DijkstraAlgorithm {
                     bestFinalPath = current.path;
                     bestFinalSteps = current.stepsUsed;
                 }
-                continue; // Don't explore further from this node
+                continue;
             }
 
-            // If we haven't used all steps yet, explore neighbors
             if (current.stepsUsed < diceRoll) {
-                // Option 1: Move to next position (costs 1 step)
                 int nextPos = movingForward ? current.position + 1 : current.position - 1;
 
-                // Check bounds
                 if (nextPos >= 1 && nextPos <= board.getTotalNodes()) {
                     int newSteps = current.stepsUsed + 1;
 
-                    // Only proceed if this is a better or first path to this position
                     if (!bestSteps.containsKey(nextPos) || newSteps <= bestSteps.get(nextPos)) {
                         List<Integer> newPath = new ArrayList<>(current.path);
                         newPath.add(nextPos);
@@ -420,10 +410,9 @@ class DijkstraAlgorithm {
                         bestPaths.put(nextPos, newPath);
                         pq.offer(new DijkstraNode(nextPos, newSteps, newPath));
 
-                        // Option 2: If this position has a ladder, also try using it (costs 1 step)
                         if (board.isLadderBottom(nextPos)) {
                             int ladderTop = board.checkLadder(nextPos);
-                            int ladderSteps = newSteps + 1; // Using ladder counts as 1 additional step
+                            int ladderSteps = newSteps + 1;
 
                             if (ladderSteps <= diceRoll) {
                                 if (!bestSteps.containsKey(ladderTop) || ladderSteps <= bestSteps.get(ladderTop)) {
@@ -444,8 +433,8 @@ class DijkstraAlgorithm {
         return bestFinalPath;
     }
 
-    public void displayShortestPath(int start, int diceRoll, JLabel statusLabel, Player player) {
-        List<Integer> path = findShortestPathWithLadders(start, diceRoll);
+    public void displayShortestPath(int start, int diceRoll, JLabel statusLabel, Player player, boolean forward) {
+        List<Integer> path = findShortestPathWithLadders(start, diceRoll, forward);
 
         if (path != null && path.size() > 1) {
             StringBuilder pathInfo = new StringBuilder();
@@ -459,7 +448,6 @@ class DijkstraAlgorithm {
                 int pos = path.get(i);
                 pathInfo.append(pos);
 
-                // Check if this was a ladder jump
                 if (i > 0 && board.isLadderBottom(path.get(i-1)) &&
                         board.checkLadder(path.get(i-1)) == pos) {
                     pathInfo.append("⬆");
@@ -484,16 +472,16 @@ class Board {
     private static final int TOTAL_NODES = ROWS * COLS;
     private Map<Integer, Integer> ladders;
     private Random random;
-    private DijkstraAlgorithm dijkstra; // NEW: Dijkstra algorithm instance
+    private DijkstraAlgorithm dijkstra;
 
     public Board() {
         nodes = new Node[ROWS][COLS];
         ladders = new HashMap<>();
         random = new Random();
-        dijkstra = new DijkstraAlgorithm(this); // NEW: Initialize Dijkstra
+        dijkstra = new DijkstraAlgorithm(this);
         initializeBoard();
         generateRandomLadders();
-        generateRandomPoints(); // NEW: Generate random points
+        generateRandomPoints();
     }
 
     private void initializeBoard() {
@@ -552,16 +540,13 @@ class Board {
         }
     }
 
-    // NEW: Generate random points for boxes
     private void generateRandomPoints() {
-        // Set 100 points for the last box
         Node lastNode = getNode(TOTAL_NODES);
         if (lastNode != null) {
             lastNode.setPoints(100);
         }
 
-        // Generate random points for 10-15 random boxes (excluding first and last)
-        int numberOfPointBoxes = 10 + random.nextInt(6); // 10 to 15 boxes
+        int numberOfPointBoxes = 10 + random.nextInt(6);
         List<Integer> availablePositions = new ArrayList<>();
 
         for (int i = 2; i < TOTAL_NODES; i++) {
@@ -575,7 +560,7 @@ class Board {
 
             Node node = getNode(position);
             if (node != null) {
-                int points = 1 + random.nextInt(10); // 1 to 10 points
+                int points = 1 + random.nextInt(10);
                 node.setPoints(points);
                 System.out.println("Points: Box " + position + " = " + points);
             }
@@ -605,7 +590,6 @@ class Board {
         return new HashMap<>(ladders);
     }
 
-    // NEW: Check if a number is prime
     public boolean isPrime(int n) {
         if (n <= 1) return false;
         if (n <= 3) return true;
@@ -616,7 +600,6 @@ class Board {
         return true;
     }
 
-    // NEW: Get Dijkstra algorithm instance
     public DijkstraAlgorithm getDijkstra() {
         return dijkstra;
     }
@@ -730,16 +713,14 @@ class GameManager {
         int roll = dice.roll();
         boolean movingForward = dice.isGreen();
 
-        // Check if starting from prime number - enables Dijkstra
+        // FIXED: Check if starting from prime number - enables Dijkstra regardless of direction
         boolean canUseLadders = board.isPrime(startPosition);
         List<Integer> optimalPath = null;
 
-        if (canUseLadders && movingForward) {
-            // Use Dijkstra to find optimal path with ladders
-            optimalPath = board.getDijkstra().findShortestPathWithLadders(startPosition, roll);
-
-            // Display the path found
-            board.getDijkstra().displayShortestPath(startPosition, roll, statusLabel, currentPlayer);
+        // FIXED: Always try to use Dijkstra when starting from prime, even for backward movement
+        if (canUseLadders) {
+            optimalPath = board.getDijkstra().findShortestPathWithLadders(startPosition, roll, movingForward);
+            board.getDijkstra().displayShortestPath(startPosition, roll, statusLabel, currentPlayer, movingForward);
         }
 
         final List<Integer> finalPath = optimalPath;
@@ -754,10 +735,8 @@ class GameManager {
                 ((Timer)e.getSource()).stop();
 
                 if (canUseLadders && finalPath != null && finalPath.size() > 1) {
-                    // Follow the Dijkstra path
                     followDijkstraPath(currentPlayer, finalPath, 0, onComplete);
                 } else {
-                    // Normal movement without Dijkstra
                     int newPosition;
                     if (movingForward) {
                         newPosition = startPosition + roll;
@@ -780,8 +759,6 @@ class GameManager {
         delayTimer.start();
     }
 
-
-    // NEW: Method to follow Dijkstra path step by step
     private void followDijkstraPath(Player player, List<Integer> path, int currentIndex, Runnable onComplete) {
         if (currentIndex >= path.size() - 1) {
             finishTurn(onComplete);
@@ -791,11 +768,9 @@ class GameManager {
         int currentPos = path.get(currentIndex);
         int nextPos = path.get(currentIndex + 1);
 
-        // Check if this is a ladder jump
         boolean isLadder = board.isLadderBottom(currentPos) && board.checkLadder(currentPos) == nextPos;
 
         if (isLadder) {
-            // Animate ladder climb
             player.setLadderTarget(nextPos);
             Timer ladderTimer = new Timer(20, new ActionListener() {
                 @Override
@@ -809,7 +784,6 @@ class GameManager {
             });
             ladderTimer.start();
         } else {
-            // Normal movement
             player.setTargetPosition(nextPos);
             Timer moveTimer = new Timer(300, new ActionListener() {
                 @Override
@@ -825,7 +799,6 @@ class GameManager {
         }
     }
 
-    // NEW: Extracted method for normal movement handling
     private void handleNormalMovement(Player currentPlayer, int startPosition, int totalSteps,
                                       Runnable onComplete) {
         final int[] stepsUsed = {0};
@@ -838,8 +811,6 @@ class GameManager {
 
                 if (movementComplete) {
                     movementTimer.stop();
-
-                    // Normal movement complete - no ladder checking when Dijkstra is not active
                     finishTurn(onComplete);
                 }
             }
@@ -850,12 +821,11 @@ class GameManager {
     private void finishTurn(Runnable onComplete) {
         Player currentPlayer = players[currentPlayerIndex];
 
-        // NEW: Collect points from current position
         Node currentNode = board.getNode(currentPlayer.getCurrentPosition());
         if (currentNode != null && currentNode.getPoints() > 0) {
             int points = currentNode.getPoints();
             currentPlayer.addScore(points);
-            currentNode.setPoints(0); // Remove points after collection
+            currentNode.setPoints(0);
 
             if (statusLabel != null) {
                 String colorHex = String.format("#%02x%02x%02x",
@@ -870,7 +840,6 @@ class GameManager {
 
         doubleTurn = (currentPlayer.getCurrentPosition() % 5 == 0 && currentPlayer.getCurrentPosition() > 0);
 
-        // NEW: Show popup for double turn
         if (doubleTurn) {
             SwingUtilities.invokeLater(() -> {
                 JLabel message = new JLabel("<html><center><b style='font-size: 24px; color: rgb(255, 215, 0);'>CONGRATULATIONS!<br> you get a <br>DOUBLE TURN!</b></center></html>");
@@ -1006,7 +975,6 @@ public class BoardGame {
             titleLabel.setForeground(Color.WHITE);
             titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            // NEW: Updated rules label to include Dijkstra
             JLabel rulesLabel = new JLabel("<html><center><b>Ladder Rule:</b><br>Start from PRIME box<br>to use ladders!<br><br><b>Dijkstra Feature:</b><br>From prime boxes,<br>find optimal path<br>using ladders!</center></html>");
             rulesLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             rulesLabel.setForeground(new Color(173, 216, 230));
@@ -1081,7 +1049,6 @@ public class BoardGame {
             statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-            // Helper method to update status with colored player name
             Runnable updateStatusLabel = () -> {
                 Player currentPlayer = gameManager.getCurrentPlayer();
                 String colorHex = String.format("#%02x%02x%02x",
@@ -1097,7 +1064,6 @@ public class BoardGame {
                 statusLabel.setText(statusText);
             };
 
-            // Initial status
             updateStatusLabel.run();
 
             gameManager.setStatusLabel(statusLabel);
@@ -1116,7 +1082,6 @@ public class BoardGame {
             laddersInfoLabel.setVerticalAlignment(SwingConstants.TOP);
             laddersInfoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            // NEW: Build scoreboard instead of ladder info
             Runnable updateScoreboard = () -> {
                 StringBuilder scoreText = new StringBuilder("<html><div style='text-align: center;'>");
                 scoreText.append("<b style='font-size: 14px;'>SCOREBOARD</b><br><br>");
@@ -1136,7 +1101,6 @@ public class BoardGame {
                 laddersInfoLabel.setText(scoreText.toString());
             };
 
-            // Initial scoreboard
             updateScoreboard.run();
 
             JPanel laddersPanel = new JPanel();
@@ -1165,7 +1129,7 @@ public class BoardGame {
                             updateStatusLabel.run();
                             rollButton.setEnabled(true);
                         }
-                        updateScoreboard.run(); // Update scoreboard after each turn
+                        updateScoreboard.run();
                     });
 
                     Dice dice = gameManager.getDice();

@@ -16,23 +16,46 @@ class GamePanel extends JPanel {
         this.game = game;
         loadMapImage(imagePath);
 
-        setPreferredSize(new Dimension(1152, 864)); // Adjust to your image size
+        setPreferredSize(new Dimension(game.getOriginalImageWidth(), game.getOriginalImageHeight()));
         setBackground(Color.WHITE);
 
         // Add mouse listener for clicking nodes (for debugging/setup)
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                System.out.println("Clicked at: (" + e.getX() + ", " + e.getY() + ")");
+                // Calculate coordinates relative to original image size
+                int originalX = (int) (e.getX() * ((double) game.getOriginalImageWidth() / getWidth()));
+                int originalY = (int) (e.getY() * ((double) game.getOriginalImageHeight() / getHeight()));
+
+                System.out.println("Clicked at ORIGINAL coordinates: (" + originalX + ", " + originalY + ")");
+                System.out.println("(Current window coordinates: " + e.getX() + ", " + e.getY() + ")");
             }
         });
     }
 
     private void loadMapImage(String imagePath) {
         try {
-            mapImage = ImageIO.read(new File(imagePath));
+            // Try loading from resources
+            java.net.URL imageURL = getClass().getClassLoader().getResource(imagePath);
+
+            if (imageURL != null) {
+                mapImage = ImageIO.read(imageURL);
+                System.out.println("Image loaded successfully from resources!");
+            } else {
+                // Try loading from file system
+                File imageFile = new File(imagePath);
+                System.out.println("Looking for image at: " + imageFile.getAbsolutePath());
+
+                if (imageFile.exists()) {
+                    mapImage = ImageIO.read(imageFile);
+                    System.out.println("Image loaded successfully from file!");
+                } else {
+                    System.err.println("Image file not found at: " + imageFile.getAbsolutePath());
+                }
+            }
         } catch (Exception e) {
             System.err.println("Error loading image: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -42,21 +65,34 @@ class GamePanel extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Draw map image
+        // Draw map image scaled to current panel size
         if (mapImage != null) {
             g2d.drawImage(mapImage, 0, 0, getWidth(), getHeight(), null);
         }
 
-        // Draw nodes
+        // Draw nodes (scaled)
         drawNodes(g2d);
 
-        // Draw players
+        // Draw players (scaled)
         drawPlayers(g2d);
     }
 
     private void drawNodes(Graphics2D g2d) {
         for (Node node : game.getNodes()) {
-            Point pos = node.getPosition();
+            // Get scaled position based on current panel size
+            Point pos = node.getScaledPosition(
+                    game.getOriginalImageWidth(),
+                    game.getOriginalImageHeight(),
+                    getWidth(),
+                    getHeight()
+            );
+
+            // Scale node size proportionally
+            double scale = Math.min(
+                    (double) getWidth() / game.getOriginalImageWidth(),
+                    (double) getHeight() / game.getOriginalImageHeight()
+            );
+            int scaledNodeSize = (int) (NODE_SIZE * scale);
 
             // Draw node circle
             if (node.getType() == Node.NodeType.START) {
@@ -69,40 +105,56 @@ class GamePanel extends JPanel {
                 g2d.setColor(new Color(100, 100, 100, 100));
             }
 
-            g2d.fillOval(pos.x - NODE_SIZE/2, pos.y - NODE_SIZE/2, NODE_SIZE, NODE_SIZE);
+            g2d.fillOval(pos.x - scaledNodeSize/2, pos.y - scaledNodeSize/2, scaledNodeSize, scaledNodeSize);
 
-            // Draw node ID
+            // Draw node ID with scaled font
             g2d.setColor(Color.BLACK);
-            g2d.setFont(new Font("Arial", Font.BOLD, 12));
+            int fontSize = Math.max(8, (int) (12 * scale));
+            g2d.setFont(new Font("Arial", Font.BOLD, fontSize));
             String id = String.valueOf(node.getId());
             FontMetrics fm = g2d.getFontMetrics();
             int textWidth = fm.stringWidth(id);
-            g2d.drawString(id, pos.x - textWidth/2, pos.y + 5);
+            g2d.drawString(id, pos.x - textWidth/2, pos.y + fontSize/3);
         }
     }
 
     private void drawPlayers(Graphics2D g2d) {
+        double scale = Math.min(
+                (double) getWidth() / game.getOriginalImageWidth(),
+                (double) getHeight() / game.getOriginalImageHeight()
+        );
+        int scaledPlayerSize = (int) (PLAYER_SIZE * scale);
+
         for (int i = 0; i < game.getPlayers().size(); i++) {
             Player player = game.getPlayers().get(i);
             Node currentNode = player.getCurrentNode();
 
             if (currentNode != null) {
-                Point pos = currentNode.getPosition();
+                Point pos = currentNode.getScaledPosition(
+                        game.getOriginalImageWidth(),
+                        game.getOriginalImageHeight(),
+                        getWidth(),
+                        getHeight()
+                );
 
-                // Offset players so they don't overlap
-                int offsetX = (i % 2) * 15 - 7;
-                int offsetY = (i / 2) * 15 - 7;
+                // Offset players so they don't overlap (scaled)
+                int offsetX = (int) ((i % 2) * 15 * scale - 7 * scale);
+                int offsetY = (int) ((i / 2) * 15 * scale - 7 * scale);
 
                 g2d.setColor(player.getColor());
-                g2d.fillOval(pos.x + offsetX - PLAYER_SIZE/2,
-                        pos.y + offsetY - PLAYER_SIZE/2,
-                        PLAYER_SIZE, PLAYER_SIZE);
+                g2d.fillOval(pos.x + offsetX - scaledPlayerSize/2,
+                        pos.y + offsetY - scaledPlayerSize/2,
+                        scaledPlayerSize, scaledPlayerSize);
 
                 g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("Arial", Font.BOLD, 10));
-                g2d.drawString(player.getName().substring(0, 1),
-                        pos.x + offsetX - 4,
-                        pos.y + offsetY + 4);
+                int fontSize = Math.max(8, (int) (10 * scale));
+                g2d.setFont(new Font("Arial", Font.BOLD, fontSize));
+                FontMetrics fm = g2d.getFontMetrics();
+                String initial = player.getName().substring(0, 1);
+                int textWidth = fm.stringWidth(initial);
+                g2d.drawString(initial,
+                        pos.x + offsetX - textWidth/2,
+                        pos.y + offsetY + fontSize/3);
             }
         }
     }

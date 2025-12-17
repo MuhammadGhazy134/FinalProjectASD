@@ -5,7 +5,7 @@ import java.util.List;
 
 class Node {
     private int id;
-    private Point position;
+    private Point originalPosition;  // Store original coordinates
     private List<Node> neighbors;
     private NodeType type;
 
@@ -15,7 +15,7 @@ class Node {
 
     public Node(int id, int x, int y) {
         this.id = id;
-        this.position = new Point(x, y);
+        this.originalPosition = new Point(x, y);
         this.neighbors = new ArrayList<>();
         this.type = isPrime(id) ? NodeType.PRIME : NodeType.NORMAL;
     }
@@ -40,9 +40,21 @@ class Node {
         return true;
     }
 
+    // Calculate scaled position based on current panel size
+    public Point getScaledPosition(int originalImageWidth, int originalImageHeight,
+                                   int currentWidth, int currentHeight) {
+        double scaleX = (double) currentWidth / originalImageWidth;
+        double scaleY = (double) currentHeight / originalImageHeight;
+
+        int scaledX = (int) (originalPosition.x * scaleX);
+        int scaledY = (int) (originalPosition.y * scaleY);
+
+        return new Point(scaledX, scaledY);
+    }
+
     // Getters and setters
     public int getId() { return id; }
-    public Point getPosition() { return position; }
+    public Point getOriginalPosition() { return originalPosition; }
     public List<Node> getNeighbors() { return neighbors; }
     public NodeType getType() { return type; }
     public void setType(NodeType type) { this.type = type; }

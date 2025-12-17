@@ -8,12 +8,16 @@ class BoardGame {
     private Random random;
     private Node startNode;
     private Node endNode;
+    private int originalImageWidth;
+    private int originalImageHeight;
 
-    public BoardGame() {
+    public BoardGame(int imageWidth, int imageHeight) {
         this.nodes = new ArrayList<>();
         this.players = new ArrayList<>();
         this.currentPlayerIndex = 0;
         this.random = new Random();
+        this.originalImageWidth = imageWidth;
+        this.originalImageHeight = imageHeight;
     }
 
     public void initializeBoard() {
@@ -24,15 +28,15 @@ class BoardGame {
     }
 
     private void createNodesFromMap() {
-        // Example node creation - REPLACE THESE WITH YOUR ACTUAL COORDINATES
-        // Format: new Node(id, x_coordinate, y_coordinate)
+        // IMPORTANT: These coordinates should be based on your ORIGINAL image size
+        // Example: If your image is 1152x864, use coordinates for that size
 
-        nodes.add(new Node(0, 660, 621));  // START position (bottom center)
-        nodes.add(new Node(1, 631, 581));
-        nodes.add(new Node(2, 606, 576 ));
-        nodes.add(new Node(3, 558, 567));  // Prime number - will trigger Dijkstra
-        nodes.add(new Node(4, 508, 547));
-        nodes.add(new Node(5, 457, 520));  // Multiple of 5 - extra turn
+        nodes.add(new Node(0, 639, 809));  // START position (bottom center)
+        nodes.add(new Node(1, 699, 597));
+        nodes.add(new Node(2, 656, 596));
+        nodes.add(new Node(3, 604, 585));  // Prime number - will trigger Dijkstra
+        nodes.add(new Node(4, 549, 564));
+        nodes.add(new Node(5, 493, 540));  // Multiple of 5 - extra turn
 
         // Continue adding all nodes from your map...
         // You need to map all the circle positions from your image
@@ -136,5 +140,13 @@ class BoardGame {
 
     public Node getEndNode() {
         return endNode;
+    }
+
+    public int getOriginalImageWidth() {
+        return originalImageWidth;
+    }
+
+    public int getOriginalImageHeight() {
+        return originalImageHeight;
     }
 }

@@ -1,6 +1,6 @@
 import java.util.*;
 
-// ============= DijkstraPathfinder.java =============
+// ============= Dijkstra.java =============
 class DijkstraPathfinder {
 
     public static List<Node> findShortestPath(Node start, Node end, List<Node> allNodes) {
