@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/ASD Class.iml" filepath="$PROJECT_DIR$/ASD Class.iml" />
       <module fileurl="file://$PROJECT_DIR$/BoardGame/BoardGame.iml" filepath="$PROJECT_DIR$/BoardGame/BoardGame.iml" />
       <module fileurl="file://$PROJECT_DIR$/BoardGame/BoardGame1/BoardGame1.iml" filepath="$PROJECT_DIR$/BoardGame/BoardGame1/BoardGame1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/BoardGame2/BoardGame2.iml" filepath="$PROJECT_DIR$/BoardGame2/BoardGame2.iml" />
       <module fileurl="file://$PROJECT_DIR$/MazeGame/MazeGame.iml" filepath="$PROJECT_DIR$/MazeGame/MazeGame.iml" />
     </modules>
   </component>
