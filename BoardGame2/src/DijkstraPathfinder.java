@@ -10,7 +10,6 @@ class DijkstraPathfinder {
                 Comparator.comparingInt(distances::get)
         );
 
-        // Initialize distances
         for (Node node : allNodes) {
             distances.put(node, Integer.MAX_VALUE);
         }
@@ -35,7 +34,6 @@ class DijkstraPathfinder {
             }
         }
 
-        // Reconstruct path
         List<Node> path = new ArrayList<>();
         Node current = end;
         while (current != null && previous.containsKey(current)) {

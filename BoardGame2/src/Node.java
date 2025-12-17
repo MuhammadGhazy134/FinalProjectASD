@@ -1,3 +1,4 @@
+
 // ============= Node.java =============
 import java.awt.*;
 import java.util.*;
@@ -5,9 +6,10 @@ import java.util.List;
 
 class Node {
     private int id;
-    private Point originalPosition;  // Store original coordinates
+    private Point originalPosition;
     private List<Node> neighbors;
     private NodeType type;
+    private int points;
 
     public enum NodeType {
         NORMAL, START, END, PRIME, SPECIAL
@@ -18,6 +20,7 @@ class Node {
         this.originalPosition = new Point(x, y);
         this.neighbors = new ArrayList<>();
         this.type = isPrime(id) ? NodeType.PRIME : NodeType.NORMAL;
+        this.points = 0;
     }
 
     public void addNeighbor(Node neighbor) {
@@ -40,7 +43,6 @@ class Node {
         return true;
     }
 
-    // Calculate scaled position based on current panel size
     public Point getScaledPosition(int originalImageWidth, int originalImageHeight,
                                    int currentWidth, int currentHeight) {
         double scaleX = (double) currentWidth / originalImageWidth;
@@ -58,4 +60,6 @@ class Node {
     public List<Node> getNeighbors() { return neighbors; }
     public NodeType getType() { return type; }
     public void setType(NodeType type) { this.type = type; }
+    public int getPoints() { return points; }
+    public void setPoints(int points) { this.points = points; }
 }
