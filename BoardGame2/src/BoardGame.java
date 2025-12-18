@@ -38,14 +38,49 @@ class BoardGame {
     private void createNodesFromMap() {
         // REPLACE THESE WITH YOUR ACTUAL MAP COORDINATES
         // Click on your map to get coordinates, then add them here
-        nodes.add(new Node(0, 640, 805));  // START
-        nodes.add(new Node(1, 640, 750));
-        nodes.add(new Node(2, 600, 720));
-        nodes.add(new Node(3, 560, 690));  // Prime
-        nodes.add(new Node(4, 520, 660));
-        nodes.add(new Node(5, 480, 630));  // Multiple of 5
-        nodes.add(new Node(6, 440, 600));
-
+        nodes.add(new Node(0, 637, 803));   // START
+        nodes.add(new Node(1, 629, 752));
+        nodes.add(new Node(2, 589, 748));   // PRIME
+        nodes.add(new Node(3, 542, 738));   // PRIME
+        nodes.add(new Node(4, 492, 711));
+        nodes.add(new Node(5, 444, 682));   // PRIME & Multiple of 5 - Double turn
+        nodes.add(new Node(6, 391, 644));
+        nodes.add(new Node(7, 340, 620));   // PRIME
+        nodes.add(new Node(8, 299, 615));
+        nodes.add(new Node(9, 210, 543));
+        nodes.add(new Node(10, 168, 523));  // Multiple of 5 - Double turn
+        nodes.add(new Node(11, 157, 474));  // PRIME
+        nodes.add(new Node(12, 78, 446));
+        nodes.add(new Node(13, 101, 394));  // PRIME
+        nodes.add(new Node(14, 80, 337));
+        nodes.add(new Node(15, 114, 318));  // Multiple of 5 - Double turn
+        nodes.add(new Node(16, 165, 313));
+        nodes.add(new Node(17, 205, 352));  // PRIME
+        nodes.add(new Node(18, 221, 384));
+        nodes.add(new Node(19, 259, 384));  // PRIME
+        nodes.add(new Node(20, 276, 331));  // Multiple of 5 - Double turn
+        nodes.add(new Node(21, 318, 243));
+        nodes.add(new Node(22, 353, 251));
+        nodes.add(new Node(23, 383, 247));  // PRIME
+        nodes.add(new Node(24, 471, 241));
+        nodes.add(new Node(25, 500, 248));  // Multiple of 5 - Double turn
+        nodes.add(new Node(26, 541, 258));
+        nodes.add(new Node(27, 579, 262));
+        nodes.add(new Node(28, 617, 257));
+        nodes.add(new Node(29, 657, 246));  // PRIME
+        nodes.add(new Node(30, 709, 237));  // Multiple of 5 - Double turn
+        nodes.add(new Node(31, 731, 266));  // PRIME
+        nodes.add(new Node(32, 762, 273));
+        nodes.add(new Node(33, 798, 276));
+        nodes.add(new Node(34, 838, 335));
+        nodes.add(new Node(35, 899, 407));  // Multiple of 5 - Double turn
+        nodes.add(new Node(36, 937, 409));
+        nodes.add(new Node(37, 975, 413));  // PRIME
+        nodes.add(new Node(38, 1031, 403));
+        nodes.add(new Node(39, 1054, 347));
+        nodes.add(new Node(40, 1031, 300));  // Multiple of 5 - Double turn
+        nodes.add(new Node(41, 991, 257));   // PRIME
+        nodes.add(new Node(42, 957, 232));   // END
         // Add more nodes here...
 
         startNode = nodes.get(0);
@@ -193,7 +228,7 @@ class BoardGame {
         }
 
         // Check for double turn
-        doubleTurn = (player.getTotalMoves() % 5 == 0);
+        doubleTurn = (currentNode.getId() % 5 == 0 && currentNode.getId() > 0);
 
         if (doubleTurn) {
             javax.swing.SwingUtilities.invokeLater(() -> {

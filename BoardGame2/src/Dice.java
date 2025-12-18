@@ -17,7 +17,7 @@ class Dice {
     public int roll() {
         lastRoll = random.nextInt(6) + 1;
         double probability = random.nextDouble();
-        isGreen = probability < 0.9; // 90% green (forward), 10% red (backward)
+        isGreen = probability < 1; // 90% green (forward), 10% red (backward)
         return lastRoll;
     }
 
