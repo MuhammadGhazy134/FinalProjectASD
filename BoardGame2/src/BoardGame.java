@@ -196,6 +196,10 @@ class BoardGame {
         int roll = dice.roll();
         boolean movingForward = dice.isGreen();
 
+        //sfx
+        SoundManager.getInstance().playSound("button_click");
+        SoundManager.getInstance().playSound("dice_roll");
+
         Node startingNode = currentPlayer.getCurrentNode();
         boolean isPrimeStart = startingNode.getType() == Node.NodeType.PRIME;
 
@@ -323,6 +327,7 @@ class BoardGame {
     }
 
     private void showDijkstraNotification() {
+        SoundManager.getInstance().playSound("dijkstra");
         SwingUtilities.invokeLater(() -> {
             // Create a custom JWindow for auto-dismissing notification
             JWindow notification = new JWindow();
@@ -359,6 +364,7 @@ class BoardGame {
     }
 
     private void showExactLandingMessage(int needed, int rolled) {
+        SoundManager.getInstance().playSound("exact_landing");
         SwingUtilities.invokeLater(() -> {
             JWindow notification = new JWindow();
             notification.setAlwaysOnTop(true);
@@ -394,6 +400,7 @@ class BoardGame {
     }
 
     private void showPerfectLandingMessage() {
+        SoundManager.getInstance().playSound("perfect_landing");
         SwingUtilities.invokeLater(() -> {
             JWindow notification = new JWindow();
             notification.setAlwaysOnTop(true);
@@ -492,6 +499,8 @@ class BoardGame {
                     return;
                 }
                 player.setDisplayNode(path.get(step));
+                //sfx
+                SoundManager.getInstance().playSound("move");
                 step++;
             }
         });
@@ -511,6 +520,8 @@ class BoardGame {
                     return;
                 }
                 player.setDisplayNode(customPath.get(step));
+                //sfx
+                SoundManager.getInstance().playSound("move");
                 step++;
             }
         });
@@ -537,6 +548,8 @@ class BoardGame {
             int points = currentNode.getPoints();
             player.addScore(points);
             currentNode.setPoints(0);
+
+            SoundManager.getInstance().playSound("collect_points");
             System.out.println(player.getName() + " collected " + points + " points!");
         }
 
@@ -544,6 +557,7 @@ class BoardGame {
         doubleTurn = (currentNode.getId() % 5 == 0 && currentNode.getId() > 0 && currentNode.getId() != 40);
 
         if (doubleTurn) {
+            SoundManager.getInstance().playSound("double_turn");
             SwingUtilities.invokeLater(() -> {
                 JLabel message = new JLabel(
                         "<html><center><b style='font-size: 24px; color: rgb(255, 215, 0);'>" +
@@ -591,6 +605,7 @@ class BoardGame {
     }
 
     private void showFinalScoreboard() {
+        SoundManager.getInstance().playSound("game_over");
         SwingUtilities.invokeLater(() -> {
             // Create custom dialog
             JDialog scoreboard = new JDialog();
@@ -756,16 +771,19 @@ class BoardGame {
 
             // Button actions
             playAgainButton.addActionListener(e -> {
+                SoundManager.getInstance().playSound("button_click");
                 scoreboard.dispose();
                 continueGame();
             });
 
             restartButton.addActionListener(e -> {
+                SoundManager.getInstance().playSound("button_click");
                 scoreboard.dispose();
                 resetGame();
             });
 
             mainMenuButton.addActionListener(e -> {
+                SoundManager.getInstance().playSound("button_click");
                 scoreboard.dispose();
                 returnToMainMenu();
             });
