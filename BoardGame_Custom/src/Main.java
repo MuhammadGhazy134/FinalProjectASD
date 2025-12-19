@@ -1,7 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 
-// ============= Main.java =============
+// Main class for Party Board Game
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -9,16 +9,28 @@ public class Main {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new BorderLayout());
 
-            // Get number of players
-            String input = JOptionPane.showInputDialog(frame,
-                    "Enter number of players (2-4):", "2");
-            int numPlayers = 2;
-            try {
-                numPlayers = Integer.parseInt(input);
-                if (numPlayers < 2) numPlayers = 2;
-                if (numPlayers > 4) numPlayers = 4;
-            } catch (Exception e) {
-                numPlayers = 2;
+            // Get number of players from command line argument
+            int numPlayers = 2; // Default value
+            if (args.length > 0) {
+                try {
+                    numPlayers = Integer.parseInt(args[0]);
+                    if (numPlayers < 2) numPlayers = 2;
+                    if (numPlayers > 4) numPlayers = 4;
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid player count argument. Using default: 2 players");
+                    numPlayers = 2;
+                }
+            } else {
+                // Fallback: show dialog only if no argument provided
+                String input = JOptionPane.showInputDialog(frame,
+                        "Enter number of players (2-4):", "2");
+                try {
+                    numPlayers = Integer.parseInt(input);
+                    if (numPlayers < 2) numPlayers = 2;
+                    if (numPlayers > 4) numPlayers = 4;
+                } catch (Exception e) {
+                    numPlayers = 2;
+                }
             }
 
             // Set your original image dimensions
@@ -97,21 +109,20 @@ public class Main {
             scoreboardPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 1));
             scoreboardPanel.add(scoreboardLabel);
 
-            //sound ui
-// Volume slider: 0 = 0%, 100 = 100%
+            // Volume control
             JLabel volumeLabel = new JLabel("Volume: 80%");
             volumeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             volumeLabel.setForeground(Color.WHITE);
             volumeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            JSlider volumeSlider = new JSlider(0, 100, 80); // 0 to 100, default 80
+            JSlider volumeSlider = new JSlider(0, 100, 80);
             volumeSlider.setMaximumSize(new Dimension(200, 40));
             volumeSlider.setBackground(new Color(60, 60, 60));
             volumeSlider.setMajorTickSpacing(25);
             volumeSlider.setPaintTicks(true);
             volumeSlider.setPaintLabels(true);
 
-// Custom labels
+            // Custom labels
             java.util.Hashtable<Integer, JLabel> labelTable = new java.util.Hashtable<>();
             JLabel label0 = new JLabel("0%");
             label0.setFont(new Font("Arial", Font.PLAIN, 10));
@@ -197,7 +208,8 @@ public class Main {
                     dicePanel.animateDiceRoll(dice.getLastRoll(), dice.getColor());
                 }
             });
-// Add a timer to continuously check if game was restarted
+
+            // Add a timer to continuously check if game was restarted
             Timer gameStateChecker = new Timer(500, e -> {
                 if (!game.isGameOver() && !rollButton.isEnabled() && !game.isAnyPlayerAnimating()) {
                     rollButton.setEnabled(true);
@@ -206,6 +218,7 @@ public class Main {
                 }
             });
             gameStateChecker.start();
+
             // Add components to right panel
             rightPanel.add(titleLabel);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
