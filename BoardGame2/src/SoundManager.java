@@ -12,6 +12,12 @@ public class SoundManager {
     private boolean soundEnabled = true;
     private float volume = 0.8f; // 0.0 to 1.0
 
+    // Background music management
+    private Clip currentBackgroundMusic;
+    private String currentBgmName;
+    private Clip previousBackgroundMusic;
+    private String previousBgmName;
+
     private SoundManager() {
         soundClips = new HashMap<>();
         loadSounds();
@@ -29,6 +35,7 @@ public class SoundManager {
         // Use absolute path for sounds folder at project root
         String basePath = System.getProperty("user.dir") + File.separator + "sounds" + File.separator;
 
+        // Sound effects
         loadSound("dice_roll", basePath + "dice_roll.wav");
         loadSound("move", basePath + "move.wav");
         loadSound("collect_points", basePath + "collect_points.wav");
@@ -38,6 +45,9 @@ public class SoundManager {
         loadSound("perfect_landing", basePath + "perfect_landing.wav");
         loadSound("game_over", basePath + "game_over.wav");
         loadSound("button_click", basePath + "button_click.wav");
+
+        // Background music
+        loadSound("bgm_main", basePath + "bgm_main.wav");
     }
 
     private void loadSound(String name, String filePath) {
@@ -160,8 +170,22 @@ public class SoundManager {
         if (clip != null) {
             try {
                 FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-                float range = volumeControl.getMaximum() - volumeControl.getMinimum();
-                float gain = (range * volume) + volumeControl.getMinimum();
+
+                // Convert linear volume (0.0 to 1.0) to decibels
+                // Using a better curve for more natural volume control
+                float min = volumeControl.getMinimum();
+                float max = volumeControl.getMaximum();
+
+                float gain;
+                if (volume <= 0.0f) {
+                    gain = min; // Mute
+                } else {
+                    // Logarithmic scale for more natural volume perception
+                    // This makes the slider feel more linear to human ears
+                    float range = max - min;
+                    gain = min + (range * volume);
+                }
+
                 volumeControl.setValue(gain);
             } catch (Exception e) {
                 System.err.println("Unable to set volume for clip");
@@ -173,11 +197,155 @@ public class SoundManager {
         return volume;
     }
 
+    // ========== BACKGROUND MUSIC METHODS ==========
+
+    /**
+     * Start playing background music on loop
+     */
+    public void playBackgroundMusic(String musicName) {
+        if (!soundEnabled) return;
+
+        Clip musicClip = soundClips.get(musicName);
+        if (musicClip != null) {
+            // Stop current background music if any
+            if (currentBackgroundMusic != null && currentBackgroundMusic.isRunning()) {
+                currentBackgroundMusic.stop();
+            }
+
+            // Set new background music
+            currentBackgroundMusic = musicClip;
+            currentBgmName = musicName;
+
+            // Reset and loop infinitely
+            musicClip.setFramePosition(0);
+            musicClip.loop(Clip.LOOP_CONTINUOUSLY);
+
+            System.out.println("🎵 Playing background music: " + musicName);
+        } else {
+            System.err.println("Background music not found: " + musicName);
+        }
+    }
+
+    /**
+     * Temporarily switch to different background music (like scoreboard music)
+     * Will remember the previous music to resume later
+     */
+    public void playTemporaryBackgroundMusic(String musicName) {
+        if (!soundEnabled) return;
+
+        // Save current background music info
+        if (currentBackgroundMusic != null) {
+            previousBackgroundMusic = currentBackgroundMusic;
+            previousBgmName = currentBgmName;
+            currentBackgroundMusic.stop();
+        }
+
+        // Play temporary music
+        Clip tempMusic = soundClips.get(musicName);
+        if (tempMusic != null) {
+            currentBackgroundMusic = tempMusic;
+            currentBgmName = musicName;
+
+            tempMusic.setFramePosition(0);
+            tempMusic.loop(Clip.LOOP_CONTINUOUSLY);
+
+            System.out.println("🎵 Playing temporary background music: " + musicName);
+        }
+    }
+
+    /**
+     * Resume the previous background music (after scoreboard music ends)
+     */
+    public void resumePreviousBackgroundMusic() {
+        if (!soundEnabled) return;
+
+        if (previousBackgroundMusic != null) {
+            // Stop current music
+            if (currentBackgroundMusic != null && currentBackgroundMusic.isRunning()) {
+                currentBackgroundMusic.stop();
+            }
+
+            // Resume previous music
+            currentBackgroundMusic = previousBackgroundMusic;
+            currentBgmName = previousBgmName;
+
+            currentBackgroundMusic.setFramePosition(0);
+            currentBackgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+
+            System.out.println("🎵 Resumed background music: " + currentBgmName);
+
+            // Clear previous reference
+            previousBackgroundMusic = null;
+            previousBgmName = null;
+        }
+    }
+
+    /**
+     * Stop all background music
+     */
+    public void stopBackgroundMusic() {
+        if (currentBackgroundMusic != null && currentBackgroundMusic.isRunning()) {
+            currentBackgroundMusic.stop();
+            System.out.println("🎵 Stopped background music");
+        }
+    }
+
+    /**
+     * Play a sound that temporarily pauses background music
+     * Background music will resume after the sound finishes
+     */
+    public void playSoundWithMusicPause(String soundName) {
+        if (!soundEnabled) return;
+
+        Clip clip = soundClips.get(soundName);
+        if (clip != null) {
+            // Save current background music
+            if (currentBackgroundMusic != null && currentBackgroundMusic.isRunning()) {
+                previousBackgroundMusic = currentBackgroundMusic;
+                previousBgmName = currentBgmName;
+                currentBackgroundMusic.stop();
+            }
+
+            // Play the sound
+            if (clip.isRunning()) {
+                clip.stop();
+            }
+            clip.setFramePosition(0);
+            clip.start();
+
+            // Add listener to resume music when sound finishes
+            clip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    // Small delay before resuming music
+                    javax.swing.Timer resumeTimer = new javax.swing.Timer(500, e -> {
+                        resumePreviousBackgroundMusic();
+                    });
+                    resumeTimer.setRepeats(false);
+                    resumeTimer.start();
+                }
+            });
+
+            System.out.println("🔊 Playing sound with music pause: " + soundName);
+        } else {
+            System.err.println("Sound not found: " + soundName);
+        }
+    }
+
+    /**
+     * Check if background music is currently playing
+     */
+    public boolean isBackgroundMusicPlaying() {
+        return currentBackgroundMusic != null && currentBackgroundMusic.isRunning();
+    }
+
     public void cleanup() {
         stopAllSounds();
+        stopBackgroundMusic();
         for (Clip clip : soundClips.values()) {
             clip.close();
         }
         soundClips.clear();
+        currentBackgroundMusic = null;
+        previousBackgroundMusic = null;
     }
 }

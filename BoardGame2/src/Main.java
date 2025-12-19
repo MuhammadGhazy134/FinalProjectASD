@@ -28,6 +28,7 @@ public class Main {
             // Initialize game
             BoardGame game = new BoardGame(originalImageWidth, originalImageHeight);
             game.initializeBoard();
+            SoundManager.getInstance().playBackgroundMusic("bgm_main");
 
             // Add players with same colors as ladder game
             Color[] colors = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW};
@@ -95,6 +96,40 @@ public class Main {
             scoreboardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
             scoreboardPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 1));
             scoreboardPanel.add(scoreboardLabel);
+
+            //sound ui
+// Volume slider: 0 = 0%, 100 = 100%
+            JLabel volumeLabel = new JLabel("Volume: 80%");
+            volumeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+            volumeLabel.setForeground(Color.WHITE);
+            volumeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            JSlider volumeSlider = new JSlider(0, 100, 80); // 0 to 100, default 80
+            volumeSlider.setMaximumSize(new Dimension(200, 40));
+            volumeSlider.setBackground(new Color(60, 60, 60));
+            volumeSlider.setMajorTickSpacing(25);
+            volumeSlider.setPaintTicks(true);
+            volumeSlider.setPaintLabels(true);
+
+// Custom labels
+            java.util.Hashtable<Integer, JLabel> labelTable = new java.util.Hashtable<>();
+            JLabel label0 = new JLabel("0%");
+            label0.setFont(new Font("Arial", Font.PLAIN, 10));
+            label0.setForeground(Color.WHITE);
+
+            JLabel label100 = new JLabel("100%");
+            label100.setFont(new Font("Arial", Font.PLAIN, 10));
+            label100.setForeground(Color.WHITE);
+
+            labelTable.put(0, label0);
+            labelTable.put(100, label100);
+            volumeSlider.setLabelTable(labelTable);
+
+            volumeSlider.addChangeListener(e -> {
+                float volume = volumeSlider.getValue() / 100f;
+                SoundManager.getInstance().setVolume(volume);
+                volumeLabel.setText("Volume: " + volumeSlider.getValue() + "%");
+            });
 
             // Update functions
             Runnable updateStatusLabel = () -> {
@@ -183,6 +218,8 @@ public class Main {
             rightPanel.add(rollButton);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
             rightPanel.add(scoreboardPanel);
+            rightPanel.add(volumeLabel);
+            rightPanel.add(volumeSlider);
 
             frame.add(gamePanel, BorderLayout.CENTER);
             frame.add(rightPanel, BorderLayout.EAST);

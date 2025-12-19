@@ -772,18 +772,21 @@ class BoardGame {
             // Button actions
             playAgainButton.addActionListener(e -> {
                 SoundManager.getInstance().playSound("button_click");
+                // No need to manually resume - it happens automatically!
                 scoreboard.dispose();
                 continueGame();
             });
 
             restartButton.addActionListener(e -> {
                 SoundManager.getInstance().playSound("button_click");
+                // No need to manually resume - it happens automatically!
                 scoreboard.dispose();
                 resetGame();
             });
 
             mainMenuButton.addActionListener(e -> {
                 SoundManager.getInstance().playSound("button_click");
+                SoundManager.getInstance().stopBackgroundMusic(); // Still stop music on exit
                 scoreboard.dispose();
                 returnToMainMenu();
             });
