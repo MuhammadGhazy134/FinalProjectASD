@@ -1,5 +1,7 @@
+// ==================== ControlPanel.java (Updated) ====================
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 
 public class ControlPanel extends JPanel {
     private MazePanel mazePanel;
@@ -10,15 +12,19 @@ public class ControlPanel extends JPanel {
     private JSlider genSpeedSlider;
     private JSlider solveSpeedSlider;
     private JLabel statsLabel;
+    private JCheckBox soundToggle;
+    private JSlider volumeSlider;
 
     private Timer statsTimer;
+    private SoundManager soundManager;
 
     public ControlPanel(MazePanel mazePanel) {
         this.mazePanel = mazePanel;
+        this.soundManager = new SoundManager();
 
         setLayout(new BorderLayout());
         setBackground(new Color(30, 41, 59));
-        setPreferredSize(new Dimension(800, 150));
+        setPreferredSize(new Dimension(800, 180)); // Increased height for sound controls
 
         initComponents();
         startStatsTimer();
@@ -44,6 +50,7 @@ public class ControlPanel extends JPanel {
 
         generateButton = createStyledButton("Generate Maze", new Color(16, 185, 129));
         generateButton.addActionListener(e -> {
+            soundManager.playSound("button_click");
             int speed = 210 - genSpeedSlider.getValue();
             mazePanel.generateMaze(speed);
         });
@@ -59,7 +66,10 @@ public class ControlPanel extends JPanel {
         row1.add(genSpeedSlider);
 
         resetButton = createStyledButton("Reset", new Color(37, 99, 235));
-        resetButton.addActionListener(e -> mazePanel.reset());
+        resetButton.addActionListener(e -> {
+            soundManager.playSound("reset");
+            mazePanel.reset();
+        });
         row1.add(resetButton);
 
         controlsPanel.add(row1);
@@ -76,10 +86,16 @@ public class ControlPanel extends JPanel {
         algorithmCombo.setSelectedItem("Dijkstra");
         algorithmCombo.setPreferredSize(new Dimension(120, 35));
         algorithmCombo.setFont(new Font("Arial", Font.PLAIN, 12));
+        algorithmCombo.addActionListener(e -> {
+            if (algorithmCombo.getSelectedItem() != null) {
+                soundManager.playSound("button_click");
+            }
+        });
         row2.add(algorithmCombo);
 
         solveButton = createStyledButton("Solve Maze", new Color(139, 92, 246));
         solveButton.addActionListener(e -> {
+            soundManager.playSound("button_click");
             String algorithm = (String) algorithmCombo.getSelectedItem();
             int speed = 310 - solveSpeedSlider.getValue();
             mazePanel.solveMaze(algorithm, speed);
@@ -96,6 +112,47 @@ public class ControlPanel extends JPanel {
         row2.add(solveSpeedSlider);
 
         controlsPanel.add(row2);
+
+        // Row 3: Sound controls
+        JPanel row3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        row3.setBackground(new Color(30, 41, 59));
+
+        soundToggle = new JCheckBox("Sound", true);
+        soundToggle.setForeground(Color.WHITE);
+        soundToggle.setBackground(new Color(30, 41, 59));
+        soundToggle.setFont(new Font("Arial", Font.PLAIN, 12));
+        soundToggle.addItemListener(e -> {
+            soundManager.setEnabled(e.getStateChange() == ItemEvent.SELECTED);
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                soundManager.playSound("button_click");
+            }
+        });
+        row3.add(soundToggle);
+
+        JLabel volumeLabel = new JLabel("Volume:");
+        volumeLabel.setForeground(Color.WHITE);
+        row3.add(volumeLabel);
+
+        volumeSlider = new JSlider(0, 100, 70);
+        volumeSlider.setPreferredSize(new Dimension(100, 30));
+        volumeSlider.setBackground(new Color(30, 41, 59));
+        volumeSlider.addChangeListener(e -> {
+            float volume = volumeSlider.getValue() / 100.0f;
+            soundManager.setVolume(volume);
+        });
+        row3.add(volumeSlider);
+
+        // Add mute button
+        JButton muteButton = createStyledButton("Mute", new Color(100, 116, 139));
+        muteButton.setPreferredSize(new Dimension(80, 25));
+        muteButton.addActionListener(e -> {
+            soundToggle.setSelected(false);
+            soundManager.setEnabled(false);
+            soundManager.playSound("button_click");
+        });
+        row3.add(muteButton);
+
+        controlsPanel.add(row3);
 
         // Bottom panel - Stats
         JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -126,6 +183,7 @@ public class ControlPanel extends JPanel {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 if (button.isEnabled()) {
                     button.setBackground(bgColor.brighter());
+                    soundManager.playSound("button_click");
                 }
             }
             public void mouseExited(java.awt.event.MouseEvent evt) {
@@ -174,5 +232,9 @@ public class ControlPanel extends JPanel {
             resetButton.setEnabled(true);
             algorithmCombo.setEnabled(true);
         }
+    }
+
+    public SoundManager getSoundManager() {
+        return soundManager;
     }
 }

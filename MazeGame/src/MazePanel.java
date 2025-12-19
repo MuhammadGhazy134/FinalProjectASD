@@ -10,6 +10,7 @@ public class MazePanel extends JPanel {
 
     private Maze maze;
     private MazeGenerator generator;
+    private SoundManager soundManager;
 
     private Position currentStep;
     private Set<String> visitedDuringGeneration;
@@ -21,10 +22,12 @@ public class MazePanel extends JPanel {
 
     private boolean isGenerating;
     private boolean isSolving;
+    private int lastStepSoundTime;
 
     public MazePanel() {
         maze = new Maze(ROWS, COLS);
         generator = new MazeGenerator(maze);
+        soundManager = new SoundManager(); // Initialize sound manager
 
         visitedDuringGeneration = new HashSet<>();
         exploredCells = new HashSet<>();
@@ -36,6 +39,12 @@ public class MazePanel extends JPanel {
                 ROWS * CELL_SIZE + 100
         ));
         setBackground(new Color(15, 23, 42));
+
+        lastStepSoundTime = 0;
+    }
+
+    public void setSoundManager(SoundManager soundManager) {
+        this.soundManager = soundManager;
     }
 
     public void generateMaze(int speed) {
@@ -50,12 +59,25 @@ public class MazePanel extends JPanel {
         pathCost = 0;
         nodesExplored = 0;
 
+        // Play start sound
+        soundManager.playSound("button_click");
+
         Thread generatorThread = new Thread(() -> {
             generator.generateWithPrim(new MazeGenerator.MazeGenerationListener() {
+                private long lastSoundTime = 0;
+
                 @Override
                 public void onStepComplete(Position current, Set<String> visited, int frontierSize) {
                     currentStep = current;
                     visitedDuringGeneration = new HashSet<>(visited);
+
+                    // Play step sound with cooldown to avoid overwhelming
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastSoundTime > 50) { // 50ms cooldown
+                        soundManager.playSound("wall_remove");
+                        lastSoundTime = currentTime;
+                    }
+
                     repaint();
                     try {
                         Thread.sleep(speed);
@@ -68,6 +90,8 @@ public class MazePanel extends JPanel {
                 public void onGenerationComplete() {
                     currentStep = null;
                     isGenerating = false;
+                    // Play completion sound
+                    soundManager.playSound("maze_generated");
                     repaint();
                 }
             });
@@ -85,6 +109,9 @@ public class MazePanel extends JPanel {
         pathCost = 0;
         nodesExplored = 0;
 
+        // Play start sound
+        soundManager.playSound("button_click");
+
         MazeSolver solver;
         switch (algorithm) {
             case "BFS": solver = new BFSSolver(maze); break;
@@ -95,6 +122,8 @@ public class MazePanel extends JPanel {
         }
 
         Thread solverThread = new Thread(() -> {
+            final long[] lastSoundTime = {0};
+
             solver.solve(new MazeSolver.SolverListener() {
                 @Override
                 public void onStepComplete(Position current, Set<Position> explored,
@@ -103,6 +132,14 @@ public class MazePanel extends JPanel {
                     exploredCells = new HashSet<>(explored);
                     queueState = new ArrayList<>(queue);
                     nodesExplored = nodes;
+
+                    // Play step sound with cooldown
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastSoundTime[0] > Math.max(30, speed/2)) {
+                        soundManager.playSound("step");
+                        lastSoundTime[0] = currentTime;
+                    }
+
                     repaint();
                     try {
                         Thread.sleep(speed);
@@ -118,6 +155,9 @@ public class MazePanel extends JPanel {
                     nodesExplored = nodes;
                     currentStep = null;
                     isSolving = false;
+
+                    // Play success sound
+                    soundManager.playSound("solution_found");
                     repaint();
                 }
 
@@ -125,6 +165,8 @@ public class MazePanel extends JPanel {
                 public void onNoSolution() {
                     currentStep = null;
                     isSolving = false;
+                    // Play error sound
+                    soundManager.playSound("error");
                     JOptionPane.showMessageDialog(MazePanel.this,
                             "No solution found!", "Info", JOptionPane.INFORMATION_MESSAGE);
                     repaint();
@@ -145,9 +187,13 @@ public class MazePanel extends JPanel {
         currentStep = null;
         pathCost = 0;
         nodesExplored = 0;
+
+        // Play reset sound
+        soundManager.playSound("reset");
         repaint();
     }
 
+    // ... rest of the existing methods remain the same ...
     public boolean isGenerating() { return isGenerating; }
     public boolean isSolving() { return isSolving; }
     public int getPathCost() { return pathCost; }
@@ -265,7 +311,7 @@ public class MazePanel extends JPanel {
 
     private void drawLegend(Graphics2D g2d, int x, int y) {
         g2d.setColor(new Color(30, 41, 59));
-        g2d.fillRoundRect(x, y, 150, 200, 10, 10);
+        g2d.fillRoundRect(x, y, 150, 230, 10, 10); // Increased height for sound info
 
         g2d.setColor(Color.WHITE);
         g2d.setFont(new Font("Arial", Font.BOLD, 14));
@@ -282,5 +328,15 @@ public class MazePanel extends JPanel {
             g2d.drawString("Cost: " + terrain.getWeight(), x + 95, yOffset + 15);
             yOffset += 30;
         }
+
+        // Add sound status
+        yOffset += 10;
+        g2d.setFont(new Font("Arial", Font.BOLD, 11));
+        g2d.drawString("Sound: " + (soundManager.isEnabled() ? "ON 🔊" : "OFF 🔇"),
+                x + 10, yOffset);
+        yOffset += 20;
+        g2d.setFont(new Font("Arial", Font.PLAIN, 10));
+        g2d.drawString("Volume: " + (int)(soundManager.getVolume() * 100) + "%",
+                x + 10, yOffset);
     }
 }
