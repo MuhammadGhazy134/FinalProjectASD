@@ -86,29 +86,29 @@ class GamePanel extends JPanel {
 
             int scaledNodeSize = (int) (NODE_SIZE * scale);
 
-            // Draw node based on type
-            if (node.getType() == Node.NodeType.START) {
-                g2d.setColor(new Color(0, 255, 0, 150));
-            } else if (node.getType() == Node.NodeType.END) {
-                g2d.setColor(new Color(255, 0, 0, 150));
-            } else if (node.getType() == Node.NodeType.PRIME) {
-                g2d.setColor(new Color(173, 216, 230, 150));
-            } else {
-                g2d.setColor(new Color(100, 100, 100, 80));
+            // Check if this is a multiple of 5 node (skip drawing circle and ID, but keep points)
+            boolean isMultipleOf5 = (node.getId() % 5 == 0 && node.getId() > 0 && node.getType() != Node.NodeType.END && node.getId() != 40);
+
+            if (!isMultipleOf5) {
+                // Draw node circle based on type
+
+                 if (node.getType() == Node.NodeType.PRIME) {
+                    g2d.setColor(new Color(173, 216, 230, 150));
+                    g2d.fillOval(pos.x - scaledNodeSize/2, pos.y - scaledNodeSize/2, scaledNodeSize, scaledNodeSize);
+                }
+                // Normal nodes: no circle drawn, only ID below
+
+                // Draw node ID
+                g2d.setColor(Color.WHITE);
+                int fontSize = Math.max(8, (int) (12 * scale));
+                g2d.setFont(new Font("Arial", Font.BOLD, fontSize));
+                String id = String.valueOf(node.getId());
+                FontMetrics fm = g2d.getFontMetrics();
+                int textWidth = fm.stringWidth(id);
+                g2d.drawString(id, pos.x - textWidth/2, pos.y + fontSize/3);
             }
 
-            g2d.fillOval(pos.x - scaledNodeSize/2, pos.y - scaledNodeSize/2, scaledNodeSize, scaledNodeSize);
-
-            // Draw node ID
-            g2d.setColor(Color.BLACK);
-            int fontSize = Math.max(8, (int) (12 * scale));
-            g2d.setFont(new Font("Arial", Font.BOLD, fontSize));
-            String id = String.valueOf(node.getId());
-            FontMetrics fm = g2d.getFontMetrics();
-            int textWidth = fm.stringWidth(id);
-            g2d.drawString(id, pos.x - textWidth/2, pos.y + fontSize/3);
-
-            // Draw points if any
+            // ALWAYS draw points if any (even for multiples of 5)
             if (node.getPoints() > 0) {
                 g2d.setColor(new Color(255, 140, 0));
                 g2d.setFont(new Font("Arial", Font.BOLD, (int)(10 * scale)));

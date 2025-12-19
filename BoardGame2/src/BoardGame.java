@@ -153,19 +153,33 @@ class BoardGame {
     }
 
     private void generateRandomPoints() {
+        // Always set end node to 100 points first
         endNode.setPoints(100);
-        int numberOfPointBoxes = 10 + random.nextInt(6);
+
+        // Change these numbers to control how many point boxes appear
+        // Format: minimum + random.nextInt(range)
+        // Example: 20 + random.nextInt(11) = 20 to 30 point boxes
+        int numberOfPointBoxes = 20 + random.nextInt(11);  // 20-30 point boxes
+
         List<Integer> availableIndices = new ArrayList<>();
 
-        for (int i = 1; i < nodes.size() - 1; i++) {
-            availableIndices.add(i);
+        // Exclude the end node (node 42) from getting random points
+        for (int i = 1; i < nodes.size(); i++) {
+            if (nodes.get(i) != endNode) {  // Skip the end node
+                availableIndices.add(i);
+            }
         }
 
         for (int i = 0; i < numberOfPointBoxes && !availableIndices.isEmpty(); i++) {
             int index = random.nextInt(availableIndices.size());
             int nodeIndex = availableIndices.remove(index);
             Node node = nodes.get(nodeIndex);
-            int points = 1 + random.nextInt(10);
+
+            // Change this to control the range of points per box
+            // Format: minimum + random.nextInt(range)
+            // Example: 1 + random.nextInt(15) = 1 to 15 points per box
+            int points = 1 + random.nextInt(15);  // 1-15 points per box
+
             node.setPoints(points);
         }
     }
@@ -526,7 +540,8 @@ class BoardGame {
             System.out.println(player.getName() + " collected " + points + " points!");
         }
 
-        doubleTurn = (currentNode.getId() % 5 == 0 && currentNode.getId() > 0);
+        // Check for double turn (multiples of 5, but NOT node 40)
+        doubleTurn = (currentNode.getId() % 5 == 0 && currentNode.getId() > 0 && currentNode.getId() != 40);
 
         if (doubleTurn) {
             SwingUtilities.invokeLater(() -> {
@@ -543,6 +558,7 @@ class BoardGame {
 
         if (currentNode == endNode) {
             gameOver = true;
+            showFinalScoreboard();
         }
 
         if (!gameOver && !doubleTurn) {
@@ -572,5 +588,269 @@ class BoardGame {
             if (player.isAnimating()) return true;
         }
         return false;
+    }
+
+    private void showFinalScoreboard() {
+        SwingUtilities.invokeLater(() -> {
+            // Create custom dialog
+            JDialog scoreboard = new JDialog();
+            scoreboard.setTitle("Game Over");
+            scoreboard.setModal(true);
+            scoreboard.setSize(600, 700);
+            scoreboard.setLocationRelativeTo(null);
+            scoreboard.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+
+            JPanel mainPanel = new JPanel();
+            mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+            mainPanel.setBackground(new Color(20, 20, 20));
+            mainPanel.setBorder(BorderFactory.createEmptyBorder(40, 50, 40, 50));
+
+            // Sort players by score (highest first)
+            List<Player> sortedPlayers = new ArrayList<>(players);
+            sortedPlayers.sort((p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()));
+
+            Player winner = sortedPlayers.get(0);
+
+            // Title - LEADERBOARD
+            JLabel titleLabel = new JLabel("LEADERBOARD");
+            titleLabel.setFont(new Font("Arial", Font.BOLD, 56));
+            titleLabel.setForeground(new Color(255, 180, 0));
+            titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            // Winner announcement
+            JLabel winnerLabel = new JLabel("🏆 WINNER 🏆");
+            winnerLabel.setFont(new Font("Arial", Font.BOLD, 32));
+            winnerLabel.setForeground(new Color(255, 215, 0));
+            winnerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            winnerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            // Winner name with color
+            String winnerColorHex = String.format("#%02x%02x%02x",
+                    winner.getColor().getRed(),
+                    winner.getColor().getGreen(),
+                    winner.getColor().getBlue());
+            JLabel winnerNameLabel = new JLabel(
+                    "<html><center><b style='font-size: 26px; color: " + winnerColorHex + ";'>" +
+                            winner.getName() + "</b><br>" +
+                            "<span style='font-size: 18px; color: rgb(200, 200, 200);'>Final Score: " +
+                            winner.getScore() + " points</span></center></html>");
+            winnerNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            winnerNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            // Rankings panel with clean design
+            JPanel rankingsPanel = new JPanel();
+            rankingsPanel.setLayout(new BoxLayout(rankingsPanel, BoxLayout.Y_AXIS));
+            rankingsPanel.setBackground(new Color(20, 20, 20));
+            rankingsPanel.setMaximumSize(new Dimension(500, 300));
+            rankingsPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+
+            // Header row
+            JPanel headerPanel = new JPanel(new BorderLayout());
+            headerPanel.setBackground(new Color(20, 20, 20));
+            headerPanel.setMaximumSize(new Dimension(500, 40));
+
+            JLabel playerHeader = new JLabel("PLAYER");
+            playerHeader.setFont(new Font("Arial", Font.BOLD, 18));
+            playerHeader.setForeground(new Color(255, 180, 0));
+            playerHeader.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 0));
+
+            JLabel scoreHeader = new JLabel("SCORE");
+            scoreHeader.setFont(new Font("Arial", Font.BOLD, 18));
+            scoreHeader.setForeground(new Color(255, 180, 0));
+            scoreHeader.setHorizontalAlignment(SwingConstants.RIGHT);
+            scoreHeader.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 20));
+
+            headerPanel.add(playerHeader, BorderLayout.WEST);
+            headerPanel.add(scoreHeader, BorderLayout.EAST);
+
+            rankingsPanel.add(headerPanel);
+
+            // Add each player's ranking
+            for (int i = 0; i < sortedPlayers.size(); i++) {
+                Player p = sortedPlayers.get(i);
+
+                JPanel playerPanel = new JPanel(new BorderLayout());
+                playerPanel.setBackground(new Color(255, 165, 0));
+                playerPanel.setMaximumSize(new Dimension(500, 60));
+                playerPanel.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+
+                // Left side - Player icon and name
+                JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+                leftPanel.setBackground(new Color(255, 165, 0));
+
+                // Player icon
+                JPanel iconPanel = new JPanel() {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        super.paintComponent(g);
+                        Graphics2D g2d = (Graphics2D) g;
+                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2d.setColor(Color.WHITE);
+                        g2d.fillOval(0, 0, 40, 40);
+                        g2d.setColor(p.getColor());
+                        g2d.fillOval(12, 8, 16, 16);
+                        g2d.fillOval(8, 20, 24, 20);
+                    }
+                };
+                iconPanel.setPreferredSize(new Dimension(40, 40));
+                iconPanel.setBackground(new Color(255, 165, 0));
+
+                JLabel nameLabel = new JLabel(p.getName());
+                nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
+                nameLabel.setForeground(Color.BLACK);
+
+                leftPanel.add(iconPanel);
+                leftPanel.add(nameLabel);
+
+                // Right side - Score
+                JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+                rightPanel.setBackground(new Color(255, 140, 0));
+                rightPanel.setPreferredSize(new Dimension(120, 44));
+
+                JLabel scoreLabel = new JLabel(p.getScore() + " pts");
+                scoreLabel.setFont(new Font("Arial", Font.BOLD, 20));
+                scoreLabel.setForeground(Color.BLACK);
+                scoreLabel.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
+
+                rightPanel.add(scoreLabel);
+
+                playerPanel.add(leftPanel, BorderLayout.CENTER);
+                playerPanel.add(rightPanel, BorderLayout.EAST);
+
+                rankingsPanel.add(playerPanel);
+
+                if (i < sortedPlayers.size() - 1) {
+                    rankingsPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+                }
+            }
+
+            // Buttons panel
+            JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+            buttonsPanel.setBackground(new Color(20, 20, 20));
+            buttonsPanel.setMaximumSize(new Dimension(550, 70));
+
+            JButton playAgainButton = new JButton("PLAY AGAIN");
+            playAgainButton.setFont(new Font("Arial", Font.BOLD, 16));
+            playAgainButton.setPreferredSize(new Dimension(200, 50));
+            playAgainButton.setBackground(new Color(0, 180, 0));
+            playAgainButton.setForeground(Color.WHITE);
+            playAgainButton.setFocusPainted(false);
+            playAgainButton.setBorderPainted(false);
+
+            JButton restartButton = new JButton("RESTART");
+            restartButton.setFont(new Font("Arial", Font.BOLD, 16));
+            restartButton.setPreferredSize(new Dimension(200, 50));
+            restartButton.setBackground(new Color(255, 165, 0));
+            restartButton.setForeground(Color.WHITE);
+            restartButton.setFocusPainted(false);
+            restartButton.setBorderPainted(false);
+
+            JButton mainMenuButton = new JButton("EXIT");
+            mainMenuButton.setFont(new Font("Arial", Font.BOLD, 16));
+            mainMenuButton.setPreferredSize(new Dimension(200, 50));
+            mainMenuButton.setBackground(new Color(200, 0, 0));
+            mainMenuButton.setForeground(Color.WHITE);
+            mainMenuButton.setFocusPainted(false);
+            mainMenuButton.setBorderPainted(false);
+
+            // Button actions
+            playAgainButton.addActionListener(e -> {
+                scoreboard.dispose();
+                continueGame();
+            });
+
+            restartButton.addActionListener(e -> {
+                scoreboard.dispose();
+                resetGame();
+            });
+
+            mainMenuButton.addActionListener(e -> {
+                scoreboard.dispose();
+                returnToMainMenu();
+            });
+
+            buttonsPanel.add(playAgainButton);
+            buttonsPanel.add(restartButton);
+
+            JPanel exitPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            exitPanel.setBackground(new Color(20, 20, 20));
+            exitPanel.add(mainMenuButton);
+
+            // Add all components to main panel
+            mainPanel.add(titleLabel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+            mainPanel.add(winnerLabel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+            mainPanel.add(winnerNameLabel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+            mainPanel.add(rankingsPanel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+            mainPanel.add(buttonsPanel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+            mainPanel.add(exitPanel);
+
+            scoreboard.add(mainPanel);
+            scoreboard.setVisible(true);
+        });
+    }
+
+    public void continueGame() {
+        // Continue with current scores - just reset positions
+        gameOver = false;
+        doubleTurn = false;
+        currentPlayerIndex = 0;
+
+        // Reset player positions only (keep scores)
+        for (Player player : players) {
+            player.setCurrentNode(startNode);
+            player.setDisplayNode(startNode);  // Also reset display node
+        }
+
+        // Regenerate random points
+        for (Node node : nodes) {
+            node.setPoints(0);
+        }
+        generateRandomPoints();
+
+        System.out.println("Continuing game with current scores!");
+    }
+
+    public void resetGame() {
+        // Reset all game state INCLUDING scores
+        gameOver = false;
+        doubleTurn = false;
+        currentPlayerIndex = 0;
+
+        // Reset all players (positions AND scores)
+        for (Player player : players) {
+            player.setCurrentNode(startNode);
+            player.setDisplayNode(startNode);  // Also reset display node
+            player.setScore(0);
+        }
+
+        // Regenerate random points
+        for (Node node : nodes) {
+            node.setPoints(0);
+        }
+        generateRandomPoints();
+
+        System.out.println("Game restarted! All scores reset to 0.");
+    }
+
+    public void returnToMainMenu() {
+        // This will be connected to your game launcher later
+        System.out.println("Returning to main menu...");
+        System.out.println("(Game launcher integration will be added later)");
+
+        // For now, just close the game window
+        SwingUtilities.invokeLater(() -> {
+            Window[] windows = Window.getWindows();
+            for (Window window : windows) {
+                if (window instanceof JFrame) {
+                    window.dispose();
+                }
+            }
+        });
     }
 }

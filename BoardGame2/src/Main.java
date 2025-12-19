@@ -162,7 +162,15 @@ public class Main {
                     dicePanel.animateDiceRoll(dice.getLastRoll(), dice.getColor());
                 }
             });
-
+// Add a timer to continuously check if game was restarted
+            Timer gameStateChecker = new Timer(500, e -> {
+                if (!game.isGameOver() && !rollButton.isEnabled() && !game.isAnyPlayerAnimating()) {
+                    rollButton.setEnabled(true);
+                    updateStatusLabel.run();
+                    updateScoreboard.run();
+                }
+            });
+            gameStateChecker.start();
             // Add components to right panel
             rightPanel.add(titleLabel);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
