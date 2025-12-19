@@ -1282,15 +1282,25 @@ class Main {
             rightPanel.setBackground(new Color(60, 60, 60));
             rightPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+            // Title panel wrapper for proper centering
+            JPanel titlePanel = new JPanel(new GridBagLayout());
+            titlePanel.setBackground(new Color(60, 60, 60));
+            titlePanel.setMaximumSize(new Dimension(280, 40));
+
             JLabel titleLabel = new JLabel("Prime Ladder Game");
             titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
             titleLabel.setForeground(Color.WHITE);
-            titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            titlePanel.add(titleLabel);
 
-            JLabel rulesLabel = new JLabel("<html><center><b>Ladder Rule:</b><br>Start from PRIME box<br>to use ladders!<br><br><b>Dijkstra Feature:</b><br>From prime boxes,<br>find optimal path<br>using ladders!</center></html>");
+            // Rules panel wrapper for proper centering
+            JPanel rulesPanel = new JPanel(new GridBagLayout());
+            rulesPanel.setBackground(new Color(60, 60, 60));
+            rulesPanel.setMaximumSize(new Dimension(280, 120));
+
+            JLabel rulesLabel = new JLabel("<html><center><b>Hint:</b><br>Start from PRIME box<br>to use ladders!<br><br><b>2X:</b><br>Land on multiple of 5 boxes,<br>you will get a double turn!</center></html>");
             rulesLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             rulesLabel.setForeground(new Color(173, 216, 230));
-            rulesLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            rulesPanel.add(rulesLabel);
 
             DicePanel dicePanel = new DicePanel();
             dicePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -1397,9 +1407,9 @@ class Main {
                 }
             });
 
-            rightPanel.add(titleLabel);
+            rightPanel.add(titlePanel);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-            rightPanel.add(rulesLabel);
+            rightPanel.add(rulesPanel);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
             rightPanel.add(dicePanel);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
