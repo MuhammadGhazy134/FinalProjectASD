@@ -5,7 +5,7 @@ import java.awt.*;
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Mario Party Board Game - Dijkstra Edition");
+            JFrame frame = new JFrame("Party Board Game");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new BorderLayout());
 
@@ -47,16 +47,16 @@ public class Main {
             rightPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
             // Title
-            JLabel titleLabel = new JLabel("Mario Party Game");
-            titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
+            JLabel titleLabel = new JLabel("Party Board Game");
+            titleLabel.setFont(new Font("Comic Sans MS", Font.BOLD, 22));
             titleLabel.setForeground(Color.WHITE);
             titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             // Rules
             JLabel rulesLabel = new JLabel(
-                    "<html><center><b>Dijkstra Feature:</b><br>" +
+                    "<html><center><b>💡 Hint:</b><br>" +
                             "Start from PRIME box<br>to use intersections!<br><br>" +
-                            "<b>Double Turn:</b><br>Land on multiples of 5!</center></html>");
+                            "<b>❓ Mystery Box:</b><br>Land on the box to get the surprise!</center></html>");
             rulesLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             rulesLabel.setForeground(new Color(173, 216, 230));
             rulesLabel.setAlignmentX(Component.CENTER_ALIGNMENT);

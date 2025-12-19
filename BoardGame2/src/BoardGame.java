@@ -559,14 +559,37 @@ class BoardGame {
         if (doubleTurn) {
             SoundManager.getInstance().playSound("double_turn");
             SwingUtilities.invokeLater(() -> {
+                // Create a custom JWindow for auto-dismissing notification
+                JWindow notification = new JWindow();
+                notification.setAlwaysOnTop(true);
+
+                JPanel panel = new JPanel();
+                panel.setBackground(new Color(80, 60, 0));
+                panel.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(255, 215, 0), 3),
+                        BorderFactory.createEmptyBorder(20, 40, 20, 40)
+                ));
+
                 JLabel message = new JLabel(
                         "<html><center><b style='font-size: 24px; color: rgb(255, 215, 0);'>" +
-                                "CONGRATULATIONS!<br>You get a<br>DOUBLE TURN!</b></center></html>");
+                                "⭐ you get a DOUBLE TURN! ⭐<br><br>" +
+                                "<span style='font-size: 16px; color: rgb(255, 255, 255);'>" +
+                                "You landed on a<br>mystery box!</span>" +
+                                "</b></center></html>");
                 message.setHorizontalAlignment(SwingConstants.CENTER);
-                UIManager.put("OptionPane.background", new Color(40, 40, 40));
-                UIManager.put("Panel.background", new Color(40, 40, 40));
-                JOptionPane.showMessageDialog(null, message, "Double Turn!",
-                        JOptionPane.INFORMATION_MESSAGE);
+
+                panel.add(message);
+                notification.add(panel);
+                notification.pack();
+                notification.setLocationRelativeTo(null);
+                notification.setVisible(true);
+
+                // Auto-dismiss after 2 seconds
+                javax.swing.Timer dismissTimer = new javax.swing.Timer(2000, e -> {
+                    notification.dispose();
+                });
+                dismissTimer.setRepeats(false);
+                dismissTimer.start();
             });
         }
 
@@ -605,7 +628,9 @@ class BoardGame {
     }
 
     private void showFinalScoreboard() {
+        SoundManager.getInstance().stopBackgroundMusic();
         SoundManager.getInstance().playSound("game_over");
+
         SwingUtilities.invokeLater(() -> {
             // Create custom dialog
             JDialog scoreboard = new JDialog();
@@ -769,28 +794,29 @@ class BoardGame {
             mainMenuButton.setFocusPainted(false);
             mainMenuButton.setBorderPainted(false);
 
-            // Button actions
+// Button actions
             playAgainButton.addActionListener(e -> {
                 SoundManager.getInstance().playSound("button_click");
-                // No need to manually resume - it happens automatically!
+                // Restart the main background music
+                SoundManager.getInstance().playBackgroundMusic("bgm_main");
                 scoreboard.dispose();
                 continueGame();
             });
 
             restartButton.addActionListener(e -> {
                 SoundManager.getInstance().playSound("button_click");
-                // No need to manually resume - it happens automatically!
+                // Restart the main background music
+                SoundManager.getInstance().playBackgroundMusic("bgm_main");
                 scoreboard.dispose();
                 resetGame();
             });
 
             mainMenuButton.addActionListener(e -> {
                 SoundManager.getInstance().playSound("button_click");
-                SoundManager.getInstance().stopBackgroundMusic(); // Still stop music on exit
+                SoundManager.getInstance().stopBackgroundMusic();
                 scoreboard.dispose();
                 returnToMainMenu();
             });
-
             buttonsPanel.add(playAgainButton);
             buttonsPanel.add(restartButton);
 
