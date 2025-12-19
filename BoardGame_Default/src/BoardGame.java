@@ -1,25 +1,12 @@
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.Random;
 import javax.swing.Timer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.PriorityQueue;
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.Random;
-import javax.swing.Timer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.*;
 import java.util.List;
-import java.util.PriorityQueue;
 
-// Player class representing each player in the game
+// Player class
 class Player {
     private String name;
     private Color color;
@@ -44,29 +31,12 @@ class Player {
         this.score = 0;
     }
 
-    public int getScore() {
-        return score;
-    }
-
-    public void addScore(int points) {
-        this.score += points;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Color getColor() {
-        return color;
-    }
-
-    public int getCurrentPosition() {
-        return currentPosition;
-    }
-
-    public int getDisplayPosition() {
-        return displayPosition;
-    }
+    public int getScore() { return score; }
+    public void addScore(int points) { this.score += points; }
+    public String getName() { return name; }
+    public Color getColor() { return color; }
+    public int getCurrentPosition() { return currentPosition; }
+    public int getDisplayPosition() { return displayPosition; }
 
     public void setCurrentPosition(int position) {
         this.currentPosition = position;
@@ -172,7 +142,7 @@ class Player {
     }
 }
 
-// Dice class for rolling
+// Dice class
 class Dice {
     private Random random;
     private int lastRoll;
@@ -191,24 +161,17 @@ class Dice {
         return lastRoll;
     }
 
-    public int getLastRoll() {
-        return lastRoll;
-    }
-
-    public boolean isGreen() {
-        return isGreen;
-    }
-
+    public int getLastRoll() { return lastRoll; }
+    public boolean isGreen() { return isGreen; }
     public String getColorText() {
         return isGreen ? "GREEN (Forward)" : "RED (Backward)";
     }
-
     public Color getColor() {
         return isGreen ? new Color(34, 139, 34) : new Color(220, 20, 60);
     }
 }
 
-// Node class representing each box on the board
+// Node class
 class Node {
     private int number;
     private int x, y;
@@ -222,29 +185,12 @@ class Node {
         this.points = 0;
     }
 
-    public void setPoints(int points) {
-        this.points = points;
-    }
-
-    public int getPoints() {
-        return points;
-    }
-
-    public int getNumber() {
-        return number;
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getSize() {
-        return SIZE;
-    }
+    public void setPoints(int points) { this.points = points; }
+    public int getPoints() { return points; }
+    public int getNumber() { return number; }
+    public int getX() { return x; }
+    public int getY() { return y; }
+    public int getSize() { return SIZE; }
 
     public void draw(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
@@ -300,7 +246,6 @@ class Node {
             g2d.setColor(new Color(0, 100, 200));
             String primeText = "P";
             FontMetrics fm2 = g2d.getFontMetrics();
-            int primeWidth = fm2.stringWidth(primeText);
             g2d.drawString(primeText, x + 5, y + 15);
         }
 
@@ -333,7 +278,7 @@ class Node {
     }
 }
 
-// Dijkstra Algorithm Implementation
+// Dijkstra Algorithm
 class DijkstraAlgorithm {
     private Board board;
     private boolean movingForward;
@@ -464,7 +409,7 @@ class DijkstraAlgorithm {
     }
 }
 
-// Board class managing the game board
+// Board class
 class Board {
     private Node[][] nodes;
     private static final int ROWS = 8;
@@ -670,7 +615,7 @@ class Board {
     }
 }
 
-// GameManager class to handle game logic
+// GameManager class
 class GameManager {
     private Board board;
     private Player[] players;
@@ -713,17 +658,38 @@ class GameManager {
         int roll = dice.roll();
         boolean movingForward = dice.isGreen();
 
-        // FIXED: Check if starting from prime number - enables Dijkstra regardless of direction
+        // Play sound effects
+        SoundManager.getInstance().playSound("button_click");
+        SoundManager.getInstance().playSound("dice_roll");
+
         boolean canUseLadders = board.isPrime(startPosition);
         List<Integer> optimalPath = null;
+        boolean usedLadder = false;
 
-        // FIXED: Always try to use Dijkstra when starting from prime, even for backward movement
         if (canUseLadders) {
             optimalPath = board.getDijkstra().findShortestPathWithLadders(startPosition, roll, movingForward);
+
+            // Check if ladder was actually used
+            if (optimalPath != null && optimalPath.size() > 1) {
+                for (int i = 0; i < optimalPath.size() - 1; i++) {
+                    if (board.isLadderBottom(optimalPath.get(i)) &&
+                            board.checkLadder(optimalPath.get(i)) == optimalPath.get(i + 1)) {
+                        usedLadder = true;
+                        break;
+                    }
+                }
+            }
+
             board.getDijkstra().displayShortestPath(startPosition, roll, statusLabel, currentPlayer, movingForward);
         }
 
         final List<Integer> finalPath = optimalPath;
+        final boolean showDijkstraPopup = usedLadder;
+
+        // Show Dijkstra popup if ladder was used
+        if (showDijkstraPopup) {
+            showDijkstraNotification();
+        }
 
         if (onComplete != null) {
             onComplete.run();
@@ -759,6 +725,74 @@ class GameManager {
         delayTimer.start();
     }
 
+    private void showDijkstraNotification() {
+        SoundManager.getInstance().playSound("dijkstra");
+        SwingUtilities.invokeLater(() -> {
+            JWindow notification = new JWindow();
+            notification.setAlwaysOnTop(true);
+
+            JPanel panel = new JPanel();
+            panel.setBackground(new Color(40, 40, 100));
+            panel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(100, 200, 255), 3),
+                    BorderFactory.createEmptyBorder(20, 40, 20, 40)
+            ));
+
+            JLabel message = new JLabel(
+                    "<html><center><b style='font-size: 24px; color: rgb(100, 200, 255);'>" +
+                            "🌟 DIJKSTRA ACTIVATED! 🌟<br><br>" +
+                            "<span style='font-size: 16px; color: rgb(255, 255, 255);'>" +
+                            "Shortest path taken<br>using ladder!</span>" +
+                            "</b></center></html>");
+            message.setHorizontalAlignment(SwingConstants.CENTER);
+
+            panel.add(message);
+            notification.add(panel);
+            notification.pack();
+            notification.setLocationRelativeTo(null);
+            notification.setVisible(true);
+
+            Timer dismissTimer = new Timer(2000, ev -> notification.dispose());
+            dismissTimer.setRepeats(false);
+            dismissTimer.start();
+        });
+    }
+
+    // Continuation of GameManager class...
+
+    private void showDoubleTurnNotification() {
+        SoundManager.getInstance().playSound("double_turn");
+        SwingUtilities.invokeLater(() -> {
+            JWindow notification = new JWindow();
+            notification.setAlwaysOnTop(true);
+
+            JPanel panel = new JPanel();
+            panel.setBackground(new Color(80, 60, 0));
+            panel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(255, 215, 0), 3),
+                    BorderFactory.createEmptyBorder(20, 40, 20, 40)
+            ));
+
+            JLabel message = new JLabel(
+                    "<html><center><b style='font-size: 24px; color: rgb(255, 215, 0);'>" +
+                            "⭐ DOUBLE TURN! ⭐<br><br>" +
+                            "<span style='font-size: 16px; color: rgb(255, 255, 255);'>" +
+                            "You landed on a<br>mystery box!</span>" +
+                            "</b></center></html>");
+            message.setHorizontalAlignment(SwingConstants.CENTER);
+
+            panel.add(message);
+            notification.add(panel);
+            notification.pack();
+            notification.setLocationRelativeTo(null);
+            notification.setVisible(true);
+
+            Timer dismissTimer = new Timer(2000, e -> notification.dispose());
+            dismissTimer.setRepeats(false);
+            dismissTimer.start();
+        });
+    }
+
     private void followDijkstraPath(Player player, List<Integer> path, int currentIndex, Runnable onComplete) {
         if (currentIndex >= path.size() - 1) {
             finishTurn(onComplete);
@@ -791,6 +825,7 @@ class GameManager {
                     boolean complete = player.moveToNextBox();
                     if (complete) {
                         ((Timer)e.getSource()).stop();
+                        SoundManager.getInstance().playSound("move");
                         followDijkstraPath(player, path, currentIndex + 1, onComplete);
                     }
                 }
@@ -801,17 +836,16 @@ class GameManager {
 
     private void handleNormalMovement(Player currentPlayer, int startPosition, int totalSteps,
                                       Runnable onComplete) {
-        final int[] stepsUsed = {0};
-
         movementTimer = new Timer(300, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 boolean movementComplete = currentPlayer.moveToNextBox();
-                stepsUsed[0]++;
 
                 if (movementComplete) {
                     movementTimer.stop();
                     finishTurn(onComplete);
+                } else {
+                    SoundManager.getInstance().playSound("move");
                 }
             }
         });
@@ -827,6 +861,8 @@ class GameManager {
             currentPlayer.addScore(points);
             currentNode.setPoints(0);
 
+            SoundManager.getInstance().playSound("collect_points");
+
             if (statusLabel != null) {
                 String colorHex = String.format("#%02x%02x%02x",
                         currentPlayer.getColor().getRed(),
@@ -841,14 +877,12 @@ class GameManager {
         doubleTurn = (currentPlayer.getCurrentPosition() % 5 == 0 && currentPlayer.getCurrentPosition() > 0);
 
         if (doubleTurn) {
-            SwingUtilities.invokeLater(() -> {
-                JLabel message = new JLabel("<html><center><b style='font-size: 24px; color: rgb(255, 215, 0);'>CONGRATULATIONS!<br> you get a <br>DOUBLE TURN!</b></center></html>");
-                message.setHorizontalAlignment(SwingConstants.CENTER);
-                UIManager.put("OptionPane.background", new Color(40, 40, 40));
-                UIManager.put("Panel.background", new Color(40, 40, 40));
-                UIManager.put("OptionPane.messageForeground", new Color(255, 215, 0));
-                JOptionPane.showMessageDialog(null, message, "Double Turn!", JOptionPane.INFORMATION_MESSAGE);
-            });
+            showDoubleTurnNotification();
+        }
+
+        if (currentPlayer.getCurrentPosition() >= board.getTotalNodes()) {
+            gameOver = true;
+            showFinalScoreboard();
         }
 
         if (!gameOver && !doubleTurn) {
@@ -860,52 +894,257 @@ class GameManager {
         }
     }
 
-    public Player getCurrentPlayer() {
-        return players[currentPlayerIndex];
+    private void showFinalScoreboard() {
+        SoundManager.getInstance().stopBackgroundMusic();
+        SoundManager.getInstance().playSound("game_over");
+
+        SwingUtilities.invokeLater(() -> {
+            JDialog scoreboard = new JDialog();
+            scoreboard.setTitle("Game Over");
+            scoreboard.setModal(true);
+            scoreboard.setSize(600, 700);
+            scoreboard.setLocationRelativeTo(null);
+            scoreboard.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+
+            JPanel mainPanel = new JPanel();
+            mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+            mainPanel.setBackground(new Color(20, 20, 20));
+            mainPanel.setBorder(BorderFactory.createEmptyBorder(40, 50, 40, 50));
+
+            // Sort players by score
+            List<Player> sortedPlayers = new ArrayList<>();
+            for (Player p : players) {
+                sortedPlayers.add(p);
+            }
+            sortedPlayers.sort((p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()));
+
+            Player winner = sortedPlayers.get(0);
+
+            // Title
+            JLabel titleLabel = new JLabel("LEADERBOARD");
+            titleLabel.setFont(new Font("Arial", Font.BOLD, 56));
+            titleLabel.setForeground(new Color(255, 180, 0));
+            titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            // Winner announcement
+            JLabel winnerLabel = new JLabel("🏆 WINNER 🏆");
+            winnerLabel.setFont(new Font("Arial", Font.BOLD, 32));
+            winnerLabel.setForeground(new Color(255, 215, 0));
+            winnerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            // Winner details
+            String winnerColorHex = String.format("#%02x%02x%02x",
+                    winner.getColor().getRed(),
+                    winner.getColor().getGreen(),
+                    winner.getColor().getBlue());
+            JLabel winnerNameLabel = new JLabel(
+                    "<html><center><b style='font-size: 26px; color: " + winnerColorHex + ";'>" +
+                            winner.getName() + "</b><br>" +
+                            "<span style='font-size: 18px; color: rgb(200, 200, 200);'>Final Score: " +
+                            winner.getScore() + " points</span></center></html>");
+            winnerNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            // Rankings panel
+            JPanel rankingsPanel = new JPanel();
+            rankingsPanel.setLayout(new BoxLayout(rankingsPanel, BoxLayout.Y_AXIS));
+            rankingsPanel.setBackground(new Color(20, 20, 20));
+            rankingsPanel.setMaximumSize(new Dimension(500, 300));
+
+            // Header
+            JPanel headerPanel = new JPanel(new BorderLayout());
+            headerPanel.setBackground(new Color(20, 20, 20));
+            headerPanel.setMaximumSize(new Dimension(500, 40));
+
+            JLabel playerHeader = new JLabel("PLAYER");
+            playerHeader.setFont(new Font("Arial", Font.BOLD, 18));
+            playerHeader.setForeground(new Color(255, 180, 0));
+            playerHeader.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 0));
+
+            JLabel scoreHeader = new JLabel("SCORE");
+            scoreHeader.setFont(new Font("Arial", Font.BOLD, 18));
+            scoreHeader.setForeground(new Color(255, 180, 0));
+            scoreHeader.setHorizontalAlignment(SwingConstants.RIGHT);
+            scoreHeader.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 20));
+
+            headerPanel.add(playerHeader, BorderLayout.WEST);
+            headerPanel.add(scoreHeader, BorderLayout.EAST);
+            rankingsPanel.add(headerPanel);
+
+            // Player rankings
+            for (int i = 0; i < sortedPlayers.size(); i++) {
+                Player p = sortedPlayers.get(i);
+
+                JPanel playerPanel = new JPanel(new BorderLayout());
+                playerPanel.setBackground(new Color(255, 165, 0));
+                playerPanel.setMaximumSize(new Dimension(500, 60));
+                playerPanel.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+
+                JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+                leftPanel.setBackground(new Color(255, 165, 0));
+
+                // Player icon
+                JPanel iconPanel = new JPanel() {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        super.paintComponent(g);
+                        Graphics2D g2d = (Graphics2D) g;
+                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2d.setColor(p.getColor());
+                        g2d.fillOval(5, 5, 30, 30);
+                        g2d.setColor(Color.BLACK);
+                        g2d.drawOval(5, 5, 30, 30);
+                    }
+                };
+                iconPanel.setPreferredSize(new Dimension(40, 40));
+                iconPanel.setBackground(new Color(255, 165, 0));
+
+                JLabel nameLabel = new JLabel(p.getName());
+                nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
+                nameLabel.setForeground(Color.BLACK);
+
+                leftPanel.add(iconPanel);
+                leftPanel.add(nameLabel);
+
+                JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+                rightPanel.setBackground(new Color(255, 140, 0));
+                rightPanel.setPreferredSize(new Dimension(120, 44));
+
+                JLabel scoreLabel = new JLabel(p.getScore() + " pts");
+                scoreLabel.setFont(new Font("Arial", Font.BOLD, 20));
+                scoreLabel.setForeground(Color.BLACK);
+                scoreLabel.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
+
+                rightPanel.add(scoreLabel);
+
+                playerPanel.add(leftPanel, BorderLayout.CENTER);
+                playerPanel.add(rightPanel, BorderLayout.EAST);
+
+                rankingsPanel.add(playerPanel);
+
+                if (i < sortedPlayers.size() - 1) {
+                    rankingsPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+                }
+            }
+
+            // Buttons
+            JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+            buttonsPanel.setBackground(new Color(20, 20, 20));
+            buttonsPanel.setMaximumSize(new Dimension(550, 70));
+
+            JButton playAgainButton = new JButton("PLAY AGAIN");
+            playAgainButton.setFont(new Font("Arial", Font.BOLD, 16));
+            playAgainButton.setPreferredSize(new Dimension(200, 50));
+            playAgainButton.setBackground(new Color(0, 180, 0));
+            playAgainButton.setForeground(Color.WHITE);
+            playAgainButton.setFocusPainted(false);
+
+            JButton restartButton = new JButton("RESTART");
+            restartButton.setFont(new Font("Arial", Font.BOLD, 16));
+            restartButton.setPreferredSize(new Dimension(200, 50));
+            restartButton.setBackground(new Color(255, 165, 0));
+            restartButton.setForeground(Color.WHITE);
+            restartButton.setFocusPainted(false);
+
+            JButton exitButton = new JButton("EXIT");
+            exitButton.setFont(new Font("Arial", Font.BOLD, 16));
+            exitButton.setPreferredSize(new Dimension(200, 50));
+            exitButton.setBackground(new Color(200, 0, 0));
+            exitButton.setForeground(Color.WHITE);
+            exitButton.setFocusPainted(false);
+
+            playAgainButton.addActionListener(e -> {
+                SoundManager.getInstance().playSound("button_click");
+                SoundManager.getInstance().playBackgroundMusic("bgm_main");
+                scoreboard.dispose();
+                continueGame();
+            });
+
+            restartButton.addActionListener(e -> {
+                SoundManager.getInstance().playSound("button_click");
+                SoundManager.getInstance().playBackgroundMusic("bgm_main");
+                scoreboard.dispose();
+                resetGame();
+            });
+
+            exitButton.addActionListener(e -> {
+                SoundManager.getInstance().playSound("button_click");
+                SoundManager.getInstance().stopBackgroundMusic();
+                scoreboard.dispose();
+                System.exit(0);
+            });
+
+            buttonsPanel.add(playAgainButton);
+            buttonsPanel.add(restartButton);
+
+            JPanel exitPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            exitPanel.setBackground(new Color(20, 20, 20));
+            exitPanel.add(exitButton);
+
+            // Assemble
+            mainPanel.add(titleLabel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+            mainPanel.add(winnerLabel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+            mainPanel.add(winnerNameLabel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+            mainPanel.add(rankingsPanel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+            mainPanel.add(buttonsPanel);
+            mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+            mainPanel.add(exitPanel);
+
+            scoreboard.add(mainPanel);
+            scoreboard.setVisible(true);
+        });
     }
 
-    public Player[] getPlayers() {
-        return players;
+    private void continueGame() {
+        gameOver = false;
+        doubleTurn = false;
+        currentPlayerIndex = 0;
+
+        for (Player player : players) {
+            player.setCurrentPosition(1);
+        }
+
+        // Regenerate board
+        board = new Board();
+        currentBoard = board;
     }
 
-    public int getLastRoll() {
-        return dice.getLastRoll();
+    private void resetGame() {
+        gameOver = false;
+        doubleTurn = false;
+        currentPlayerIndex = 0;
+
+        for (Player player : players) {
+            player.setCurrentPosition(1);
+            player.addScore(-player.getScore()); // Reset score to 0
+        }
+
+        // Regenerate board
+        board = new Board();
+        currentBoard = board;
     }
 
-    public boolean isGameOver() {
-        return gameOver;
-    }
-
-    public Player getWinner() {
-        if (!gameOver) return null;
-        return players[currentPlayerIndex];
-    }
-
-    public Dice getDice() {
-        return dice;
-    }
-
+    public Player getCurrentPlayer() { return players[currentPlayerIndex]; }
+    public Player[] getPlayers() { return players; }
+    public int getLastRoll() { return dice.getLastRoll(); }
+    public boolean isGameOver() { return gameOver; }
+    public Player getWinner() { return gameOver ? players[currentPlayerIndex] : null; }
+    public Dice getDice() { return dice; }
     public boolean isAnyPlayerAnimating() {
         for (Player player : players) {
             if (player.isAnimating()) return true;
         }
         return false;
     }
-
-    public boolean isDoubleTurn() {
-        return doubleTurn;
-    }
-
-    public void clearDoubleTurn() {
-        doubleTurn = false;
-    }
-
-    public Board getBoard() {
-        return board;
-    }
+    public boolean isDoubleTurn() { return doubleTurn; }
+    public void clearDoubleTurn() { doubleTurn = false; }
+    public Board getBoard() { return board; }
 }
 
-// BoardPanel class for rendering
+// BoardPanel class
 class BoardPanel extends JPanel {
     private Board board;
     private GameManager gameManager;
@@ -936,33 +1175,106 @@ class BoardPanel extends JPanel {
         }
     }
 
-    public Board getBoard() {
-        return board;
+    public Board getBoard() { return board; }
+}
+
+// DicePanel class
+class DicePanel extends JPanel {
+    private int diceValue = 0;
+    private Color diceColor = Color.WHITE;
+    private double rotationAngle = 0;
+    private Timer rotationTimer;
+
+    public DicePanel() {
+        setPreferredSize(new Dimension(100, 100));
+        setMaximumSize(new Dimension(100, 100));
+        setBackground(new Color(80, 80, 80));
+    }
+
+    public void animateDiceRoll(int finalValue, Color finalColor) {
+        rotationAngle = 0;
+        rotationTimer = new Timer(30, new ActionListener() {
+            int count = 0;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                diceValue = (int)(Math.random() * 6) + 1;
+                rotationAngle += 0.3;
+                count++;
+                if (count > 20) {
+                    rotationTimer.stop();
+                    diceValue = finalValue;
+                    diceColor = finalColor;
+                    rotationAngle = 0;
+                }
+                repaint();
+            }
+        });
+        rotationTimer.start();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int centerX = getWidth() / 2;
+        int centerY = getHeight() / 2;
+
+        g2d.translate(centerX, centerY);
+        g2d.rotate(rotationAngle);
+
+        g2d.setColor(diceColor);
+        g2d.fillRoundRect(-30, -30, 60, 60, 10, 10);
+        g2d.setColor(Color.BLACK);
+        g2d.drawRoundRect(-30, -30, 60, 60, 10, 10);
+
+        g2d.setFont(new Font("Arial", Font.BOLD, 32));
+        String val = diceValue > 0 ? String.valueOf(diceValue) : "?";
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(val);
+        int textHeight = fm.getAscent();
+        g2d.drawString(val, -textWidth / 2, textHeight / 2 - 5);
     }
 }
 
-// Main class to run the game
-public class BoardGame {
+class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Board Game - Prime Ladder Edition with Dijkstra");
+            JFrame frame = new JFrame("Prime Ladder Game with Dijkstra");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new BorderLayout());
 
-            String input = JOptionPane.showInputDialog(frame,
-                    "Enter number of players (2-4):", "2");
-            int numPlayers = 2;
-            try {
-                numPlayers = Integer.parseInt(input);
-                if (numPlayers < 2) numPlayers = 2;
-                if (numPlayers > 4) numPlayers = 4;
-            } catch (Exception e) {
-                numPlayers = 2;
+            // Get number of players from command line argument
+            int numPlayers = 2; // Default value
+            if (args.length > 0) {
+                try {
+                    numPlayers = Integer.parseInt(args[0]);
+                    if (numPlayers < 2) numPlayers = 2;
+                    if (numPlayers > 4) numPlayers = 4;
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid player count argument. Using default: 2 players");
+                    numPlayers = 2;
+                }
+            } else {
+                // Fallback: show dialog only if no argument provided
+                String input = JOptionPane.showInputDialog(frame,
+                        "Enter number of players (2-4):", "2");
+                try {
+                    numPlayers = Integer.parseInt(input);
+                    if (numPlayers < 2) numPlayers = 2;
+                    if (numPlayers > 4) numPlayers = 4;
+                } catch (Exception e) {
+                    numPlayers = 2;
+                }
             }
 
             Board board = new Board();
             GameManager gameManager = new GameManager(board, numPlayers);
             BoardPanel boardPanel = new BoardPanel(gameManager);
+
+            // Start background music
+            SoundManager.getInstance().playBackgroundMusic("bgm_main");
 
             JPanel rightPanel = new JPanel();
             rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
@@ -979,66 +1291,6 @@ public class BoardGame {
             rulesLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             rulesLabel.setForeground(new Color(173, 216, 230));
             rulesLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            rulesLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
-            class DicePanel extends JPanel {
-                private int diceValue = 0;
-                private Color diceColor = Color.WHITE;
-                private double rotationAngle = 0;
-                private Timer rotationTimer;
-
-                public DicePanel() {
-                    setPreferredSize(new Dimension(100, 100));
-                    setMaximumSize(new Dimension(100, 100));
-                    setBackground(new Color(80, 80, 80));
-                }
-
-                public void animateDiceRoll(int finalValue, Color finalColor) {
-                    rotationAngle = 0;
-                    rotationTimer = new Timer(30, new ActionListener() {
-                        int count = 0;
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            diceValue = (int)(Math.random() * 6) + 1;
-                            rotationAngle += 0.3;
-                            count++;
-                            if (count > 20) {
-                                rotationTimer.stop();
-                                diceValue = finalValue;
-                                diceColor = finalColor;
-                                rotationAngle = 0;
-                            }
-                            repaint();
-                        }
-                    });
-                    rotationTimer.start();
-                }
-
-                @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    Graphics2D g2d = (Graphics2D) g;
-                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                    int centerX = getWidth() / 2;
-                    int centerY = getHeight() / 2;
-
-                    g2d.translate(centerX, centerY);
-                    g2d.rotate(rotationAngle);
-
-                    g2d.setColor(diceColor);
-                    g2d.fillRoundRect(-30, -30, 60, 60, 10, 10);
-                    g2d.setColor(Color.BLACK);
-                    g2d.drawRoundRect(-30, -30, 60, 60, 10, 10);
-
-                    g2d.setFont(new Font("Arial", Font.BOLD, 32));
-                    String val = diceValue > 0 ? String.valueOf(diceValue) : "?";
-                    FontMetrics fm = g2d.getFontMetrics();
-                    int textWidth = fm.stringWidth(val);
-                    int textHeight = fm.getAscent();
-                    g2d.drawString(val, -textWidth / 2, textHeight / 2 - 5);
-                }
-            }
 
             DicePanel dicePanel = new DicePanel();
             dicePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -1048,6 +1300,43 @@ public class BoardGame {
             statusLabel.setForeground(Color.WHITE);
             statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            gameManager.setStatusLabel(statusLabel);
+
+            JButton rollButton = new JButton("Roll Dice");
+            rollButton.setFont(new Font("Arial", Font.BOLD, 16));
+            rollButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+            rollButton.setMaximumSize(new Dimension(150, 40));
+            rollButton.setBackground(new Color(0, 120, 215));
+            rollButton.setForeground(Color.WHITE);
+            rollButton.setFocusPainted(false);
+
+            JLabel scoreboardLabel = new JLabel();
+            scoreboardLabel.setForeground(Color.WHITE);
+            scoreboardLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+            scoreboardLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            JPanel scoreboardPanel = new JPanel();
+            scoreboardPanel.setBackground(new Color(80, 80, 80));
+            scoreboardPanel.setPreferredSize(new Dimension(240, 150));
+            scoreboardPanel.setMaximumSize(new Dimension(240, 150));
+            scoreboardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            scoreboardPanel.add(scoreboardLabel);
+
+            // Volume control
+            JLabel volumeLabel = new JLabel("Volume: 80%");
+            volumeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+            volumeLabel.setForeground(Color.WHITE);
+            volumeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            JSlider volumeSlider = new JSlider(0, 100, 80);
+            volumeSlider.setMaximumSize(new Dimension(200, 40));
+            volumeSlider.setBackground(new Color(60, 60, 60));
+            volumeSlider.addChangeListener(e -> {
+                float volume = volumeSlider.getValue() / 100f;
+                SoundManager.getInstance().setVolume(volume);
+                volumeLabel.setText("Volume: " + volumeSlider.getValue() + "%");
+            });
 
             Runnable updateStatusLabel = () -> {
                 Player currentPlayer = gameManager.getCurrentPlayer();
@@ -1064,58 +1353,30 @@ public class BoardGame {
                 statusLabel.setText(statusText);
             };
 
-            updateStatusLabel.run();
-
-            gameManager.setStatusLabel(statusLabel);
-
-            JButton rollButton = new JButton("Roll Dice");
-            rollButton.setFont(new Font("Arial", Font.BOLD, 16));
-            rollButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-            rollButton.setMaximumSize(new Dimension(150, 40));
-            rollButton.setBackground(new Color(0, 120, 215));
-            rollButton.setForeground(Color.WHITE);
-            rollButton.setFocusPainted(false);
-
-            JLabel laddersInfoLabel = new JLabel();
-            laddersInfoLabel.setForeground(Color.WHITE);
-            laddersInfoLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-            laddersInfoLabel.setVerticalAlignment(SwingConstants.TOP);
-            laddersInfoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
             Runnable updateScoreboard = () -> {
                 StringBuilder scoreText = new StringBuilder("<html><div style='text-align: center;'>");
                 scoreText.append("<b style='font-size: 14px;'>SCOREBOARD</b><br><br>");
 
-                Player[] players = gameManager.getPlayers();
-                for (int i = 0; i < players.length; i++) {
+                for (Player player : gameManager.getPlayers()) {
                     String colorHex = String.format("#%02x%02x%02x",
-                            players[i].getColor().getRed(),
-                            players[i].getColor().getGreen(),
-                            players[i].getColor().getBlue());
+                            player.getColor().getRed(),
+                            player.getColor().getGreen(),
+                            player.getColor().getBlue());
                     scoreText.append("<font color='").append(colorHex).append("'><b>")
-                            .append(players[i].getName()).append("</b></font>: ")
-                            .append(players[i].getScore()).append(" pts<br>");
+                            .append(player.getName()).append("</b></font>: ")
+                            .append(player.getScore()).append(" pts<br>");
                 }
-
                 scoreText.append("</div></html>");
-                laddersInfoLabel.setText(scoreText.toString());
+                scoreboardLabel.setText(scoreText.toString());
             };
 
+            updateStatusLabel.run();
             updateScoreboard.run();
-
-            JPanel laddersPanel = new JPanel();
-            laddersPanel.setBackground(new Color(80, 80, 80));
-            laddersPanel.setPreferredSize(new Dimension(240, 150));
-            laddersPanel.setMaximumSize(new Dimension(240, 150));
-            laddersPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            laddersPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 1));
-            laddersPanel.add(laddersInfoLabel);
 
             rollButton.addActionListener(e -> {
                 if (!gameManager.isGameOver() && !gameManager.isAnyPlayerAnimating()) {
                     rollButton.setEnabled(false);
                     gameManager.playTurn(() -> {
-                        Dice dice = gameManager.getDice();
                         if (gameManager.isGameOver()) {
                             Player winner = gameManager.getWinner();
                             String colorHex = String.format("#%02x%02x%02x",
@@ -1123,8 +1384,7 @@ public class BoardGame {
                                     winner.getColor().getGreen(),
                                     winner.getColor().getBlue());
                             statusLabel.setText("<html><center><b>GAME OVER!</b><br>Winner: <font color='" +
-                                    colorHex + "'>" + winner.getName() + "</font><br>Final Score: " +
-                                    winner.getScore() + " pts</center></html>");
+                                    colorHex + "'>" + winner.getName() + "</font></center></html>");
                         } else {
                             updateStatusLabel.run();
                             rollButton.setEnabled(true);
@@ -1147,7 +1407,10 @@ public class BoardGame {
             rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
             rightPanel.add(rollButton);
             rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-            rightPanel.add(laddersPanel);
+            rightPanel.add(scoreboardPanel);
+            rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+            rightPanel.add(volumeLabel);
+            rightPanel.add(volumeSlider);
 
             frame.add(boardPanel, BorderLayout.CENTER);
             frame.add(rightPanel, BorderLayout.EAST);
